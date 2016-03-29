@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Freesia", "Freesia\Freesia.csproj", "{C2B37648-5F91-4884-8B06-D68D6FA67616}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FreesiaTest", "FreesiaTest\FreesiaTest.csproj", "{0BBC43ED-1D64-4A01-9A3C-BD3F7568B4A1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Freesia.Test", "Freesia.Test\Freesia.Test.csproj", "{0BBC43ED-1D64-4A01-9A3C-BD3F7568B4A1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
