@@ -940,7 +940,7 @@ namespace Freesia
             var pp = prefix;
             return targetType.GetRuntimeProperties()
                 .Select(p => p.Name)
-                .Concat(targetType == typeof(T) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
+                .Concat(targetType == typeof(T) && !string.IsNullOrEmpty(UserFunctionNamespace) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
                 .Concat(targetType == typeof(UserFunctionTypePlaceholder) ? Functions.Keys : Enumerable.Empty<string>())
                 .Select(s => s.ToLowerInvariant())
                 .Where(n => n.StartsWith(pp))
