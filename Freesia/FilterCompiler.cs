@@ -80,6 +80,7 @@ namespace Tetraptera.Models
             Null,
             Nop,
             ArrayNode,
+            Lambda
         }
 
         public class CompilerToken
@@ -253,7 +254,7 @@ namespace Tetraptera.Models
                             yield return new CompilerToken { Type = TokenType.ArrayDelimiter, Position = start, Length = 1 };
                             break;
                         case '=':
-                            switch (LexChars('~', '=', '@'))
+                            switch (LexChars('~', '=', '@', '>'))
                             {
                                 case '~':
                                     yield return new CompilerToken { Type = TokenType.Regexp, Position = start, Length = 2 };
@@ -269,6 +270,9 @@ namespace Tetraptera.Models
                                         yield return new CompilerToken { Type = TokenType.ContainsI, Position = start, Length = 2 };
                                     else
                                         yield return new CompilerToken { Type = TokenType.Contains, Position = start, Length = 2 };
+                                    break;
+                                case '>':
+                                    yield return new CompilerToken { Type = TokenType.Lambda, Position = start, Length = 2 };
                                     break;
                                 default:
                                     if (!errorRecovery) throw new ParseException("Must be '=', '~' or '@' after '='.", _index);
@@ -492,6 +496,7 @@ namespace Tetraptera.Models
         }
 
         private readonly ParameterExpression _rootParameter = Expression.Parameter(typeof(T), "status");
+        private readonly Dictionary<string, ParameterExpression> _env = new Dictionary<string, ParameterExpression>();
 
         private object CompileOne(ASTNode ast)
         {
@@ -517,6 +522,11 @@ namespace Tetraptera.Models
             if (!IsOperand(ast.Token))
             {
                 return ast.Token;
+            }
+            if (ast.Token.Type == TokenType.Lambda)
+            {
+                // Parse for Lambda
+                return MakeLambdaExpression(typeof(string), ast.Left.Token, ast.Right);
             }
             if (ast.Token.Type == TokenType.Not)
             {
@@ -748,6 +758,16 @@ namespace Tetraptera.Models
                 return e;
             }
             return op(MakeToLowerCase(lhs), MakeToLowerCase(rhs));
+        }
+
+        private Expression MakeLambdaExpression(Type type, CompilerToken arg, ASTNode body)
+        {
+            var p = Expression.Parameter(type, arg.Value);
+            var tfn = typeof(Func<,>).MakeGenericType(type, typeof(bool));
+            _env.Add(arg.Value, p);
+            var one = MakeWrappedExpression(CompileOne(body));
+            _env.Clear();
+            return Expression.Lambda(tfn, one, body.Dump(), new[] { p });
         }
 
         private Expression MakeValidation(object o)
@@ -1019,6 +1039,7 @@ namespace Tetraptera.Models
         private Expression MakePropertyAccess(CompilerToken t)
         {
             if (t.Type != TokenType.Symbol) throw new ArgumentException("argument token is not symbol.");
+            if (_env.ContainsKey(t.Value)) return _env[t.Value];
             var targetExpression = (Expression)_rootParameter;
             var targetType = typeof(T);
             var properties = (IsNullable(t) ? t.Value + ".Value" : t.Value).Split('.');
@@ -1075,6 +1096,7 @@ namespace Tetraptera.Models
         private Type GetSymbolType(CompilerToken t)
         {
             if (t.Type != TokenType.Symbol) return null;
+            if (_env.ContainsKey(t.Value)) return _env[t.Value].Type;
             var properties = t.Value.Split('.');
             var statusType = typeof(T);
             var targetType = statusType;
@@ -1316,6 +1338,7 @@ namespace Tetraptera.Models
                     case TokenType.ArrayStart:
                     case TokenType.ArrayEnd:
                     case TokenType.ArrayDelimiter:
+                    case TokenType.Lambda:
                         yield return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Operator, Value = t.Value };
                         break;
                     case TokenType.Symbol:
