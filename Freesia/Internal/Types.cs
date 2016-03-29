@@ -8,9 +8,15 @@ namespace Freesia.Internal.Types
         public ASTNode Left { get; set; }
         public ASTNode Right { get; set; }
 
+        public ASTNode() { }
+        public ASTNode(CompilerToken token)
+        {
+            this.Token = token;
+        }
+
         internal string Dump()
         {
-            return Left?.Dump() + Token.Value + Right?.Dump();
+            return $"{Left?.Dump()} {Token} {Right?.Dump()}";
         }
     }
 

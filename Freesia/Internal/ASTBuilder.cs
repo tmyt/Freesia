@@ -6,15 +6,46 @@ namespace Freesia.Internal
 {
     internal class ASTBuilder
     {
+        private static ASTNode MakeAst(CompilerToken op, ref Stack<ASTNode> values)
+        {
+            var rhs = values.Pop();
+            var lhs = values.Pop();
+            return op.Type == TokenType.Not
+                ? new ASTNode { Token = op, Left = rhs }
+                : new ASTNode { Token = op, Left = lhs, Right = rhs };
+        }
+
         public static ASTNode Generate(IEnumerable<CompilerToken> list)
         {
-            var work = new Stack<ASTNode>();
-            foreach (var token in ReorderTokens(list))
+            var ops = new Stack<CompilerToken>();
+            var values = new Stack<ASTNode>();
+            CompilerToken p1, p2 = null;
+            var inArray = false;
+            foreach (var token in list)
             {
-                // 配列の終端見つけました！
+                p1 = p2;
+                p2 = token;
+                // skip ArrayDelimiter token
+                if (inArray && token.Type == TokenType.ArrayDelimiter)
+                    continue;
+                // break Array parsing
+                if (token.Type == TokenType.ArrayEnd) inArray = false;
+                // check ArrayDelimiter
+                if (inArray && p1 != null &&
+                    (p1.Type != TokenType.ArrayStart && p1.Type != TokenType.ArrayDelimiter))
+                    throw new ParseException("Array elements must be delimitered ','.", -1);
+                // enter Array parsing
+                if (token.Type == TokenType.ArrayStart) inArray = true;
+                // correct token
+                if (token.IsSymbol() || token.Type == TokenType.ArrayStart)
+                {
+                    values.Push(new ASTNode(token));
+                    continue;
+                }
+                // generate AST for Array
                 if (token.Type == TokenType.ArrayEnd)
                 {
-                    var node = work.Peek();
+                    var node = values.Peek();
                     var arrayNode = new ASTNode();
                     while (node.Token.Type != TokenType.ArrayStart)
                     {
@@ -25,8 +56,8 @@ namespace Freesia.Internal
                             arrayNode.Token = new CompilerToken { Type = TokenType.ArrayDelimiter, Value = ",", Length = 1 };
                             arrayNode = new ASTNode { Right = arrayNode, Left = node };
                         }
-                        work.Pop();
-                        node = work.Peek();
+                        values.Pop();
+                        node = values.Peek();
                     }
                     arrayNode.Token = new CompilerToken { Type = TokenType.ArrayNode, Value = "{}", Length = 2 };
                     if (arrayNode.Left == null)
@@ -34,76 +65,49 @@ namespace Freesia.Internal
                         arrayNode.Left = arrayNode.Right;
                         arrayNode.Right = null;
                     }
-                    work.Pop();
-                    work.Push(arrayNode);
+                    values.Pop();
+                    values.Push(arrayNode);
                     continue;
                 }
-                if (token.IsOperand())
-                {
-                    // 2個とってExpressionにする
-                    var rhs = work.Pop();
-                    var lhs = work.Pop();
-                    work.Push(token.Type == TokenType.Not
-                        ? new ASTNode { Token = token, Left = rhs }
-                        : new ASTNode { Token = token, Left = lhs, Right = rhs });
-                    continue;
-                }
-                work.Push(new ASTNode { Token = token });
-            }
-            if (work.Count != 1) throw new ParseException("Syntax error.", -1);
-            return work.Peek(); // AST comes here!
-        }
-
-        private static IEnumerable<CompilerToken> ReorderTokens(IEnumerable<CompilerToken> list)
-        {
-            var work = new Stack<CompilerToken>();
-            CompilerToken p1, p2 = null;
-            var inArray = false;
-            foreach (var token in list)
-            {
-                p1 = p2;
-                p2 = token;
-                if (inArray && token.Type == TokenType.ArrayDelimiter)
-                    continue;
-                if (token.Type == TokenType.ArrayEnd) inArray = false;
-                if (inArray && p1 != null &&
-                    (p1.Type != TokenType.ArrayStart && p1.Type != TokenType.ArrayDelimiter))
-                    throw new ParseException("Array elements must be delimitered ','.", -1);
-                if (token.Type == TokenType.ArrayStart) inArray = true;
-                if (token.IsSymbol() || token.Type == TokenType.ArrayStart || token.Type == TokenType.ArrayEnd)
-                {
-                    yield return token;
-                    continue;
-                }
+                // found ')'
                 if (token.Type == TokenType.CloseBracket)
                 {
-                    while (work.Peek().Type != TokenType.OpenBracket)
+                    while (ops.Peek().Type != TokenType.OpenBracket)
                     {
-                        yield return work.Pop();
+                        values.Push(MakeAst(ops.Pop(), ref values));
                     }
-                    work.Pop();
+                    ops.Pop();
                     continue;
                 }
+                // found '('
                 if (token.Type == TokenType.OpenBracket)
                 {
-                    work.Push(token);
+                    ops.Push(token);
                     continue;
                 }
-                while (work.Count != 0)
+                // enumerate pushed ops
+                while (ops.Count != 0)
                 {
-                    var t = work.Peek();
+                    var t = ops.Peek();
                     if (t.Type == TokenType.OpenBracket) break;
                     if (Operators.Priority[t.Type] >= Operators.Priority[token.Type])
                         break;
-                    yield return work.Pop();
+                    values.Push(MakeAst(ops.Pop(), ref values));
                 }
-                work.Push(token);
+                ops.Push(token);
+                // add pseudo value
                 if (token.Type == TokenType.Not)
                 {
-                    yield return new CompilerToken { Type = TokenType.Nop };
+                    values.Push(new ASTNode(new CompilerToken { Type = TokenType.Nop }));
                 }
             }
-            while (work.Count != 0) yield return work.Pop();
+            // take all ops
+            while (ops.Count != 0)
+            {
+                values.Push(MakeAst(ops.Pop(), ref values));
+            }
+            // this is AST
+            return values.Pop();
         }
     }
 }
