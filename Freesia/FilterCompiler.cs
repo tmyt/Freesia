@@ -4,12 +4,21 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using Freesia.Internal;
+using Freesia.Internal.Types;
+using Freesia.Types;
 
-namespace Tetraptera.Models
+namespace Freesia
 {
     public class FilterCompiler<T>
     {
         private class UserFunctionTypePlaceholder { }
+
+        private delegate Expression BinaryExpressionBuilder(Expression lhs, Expression rhs);
+        private delegate Expression UnaryExpressionBuilder(Expression expr);
+
+        private readonly ParameterExpression _rootParameter = Expression.Parameter(typeof(T), "status");
+        private readonly Dictionary<string, ParameterExpression> _env = new Dictionary<string, ParameterExpression>();
 
         private static Dictionary<string, Func<T, bool>> _functions;
         public static Dictionary<string, Func<T, bool>> Functions
@@ -21,482 +30,12 @@ namespace Tetraptera.Models
         }
 
         public static string UserFunctionNamespace { get; set; }
-
-        public class SyntaxInfo
-        {
-            public SyntaxType Type { get; set; }
-            public TokenType SubType { get; set; }
-            public string Value { get; set; }
-            public int Position { get; set; }
-            public int Length { get; set; }
-
-            public override string ToString()
-            {
-                return String.Format("{0}: {1}", Type, Value);
-            }
-        }
-
-        public enum SyntaxType
-        {
-            Constant,
-            ArrayArgs,
-            Operator,
-            Keyword,
-            Identifier,
-            String,
-            Error
-        }
-
-        public enum TokenType
-        {
-            Equals,
-            EqualsI,
-            NotEquals,
-            NotEqualsI,
-            Regexp,
-            NotRegexp,
-            Contains,
-            ContainsI,
-            NotContains,
-            NotContainsI,
-            And,
-            Or,
-            Not,
-            LessThan,
-            GreaterThan,
-            LessThanEquals,
-            GreaterThanEquals,
-            OpenBracket,
-            CloseBracket,
-            ArrayStart,
-            ArrayEnd,
-            ArrayDelimiter,
-            Symbol,
-            String,
-            Double,
-            Long,
-            ULong,
-            Bool,
-            Null,
-            Nop,
-            ArrayNode,
-            Lambda
-        }
-
-        public class CompilerToken
-        {
-            public TokenType Type { get; set; }
-            public string Value { get; set; }
-            public int Position { get; set; }
-            public int Length { get; set; }
-
-            public override string ToString()
-            {
-                return String.Format("{0}: {1}", Type, Value);
-            }
-        }
-
-        public class ASTNode
-        {
-            public CompilerToken Token { get; set; }
-            public ASTNode Left { get; set; }
-            public ASTNode Right { get; set; }
-
-            internal string Dump()
-            {
-                return Left?.Dump() + Token.Value + Right?.Dump();
-            }
-        }
-
-        private class ArrayProperty
-        {
-            public string PropName { get; set; }
-            public string ArrayAccessor { get; set; }
-            public int Index { get; set; }
-        }
-
-        private class Tokenizer
-        {
-            private string _text;
-            private int _index;
-
-            private void SkipWhile(params char[] chars)
-            {
-                while (_index < _text.Length)
-                {
-                    if (!chars.Contains(_text[_index])) break;
-                    _index++;
-                }
-            }
-
-            private char LexChar()
-            {
-                if (_index >= _text.Length) return (char)0;
-                return _text[_index++];
-            }
-
-            private char PeekChar()
-            {
-                if (_index >= _text.Length) return (char)0;
-                return _text[_index];
-            }
-
-            private char LexChars(params char[] chars)
-            {
-                var c = PeekChars(chars);
-                if (c != 0) _index++;
-                return c;
-            }
-
-            private char PeekChars(params char[] chars)
-            {
-                if (_index >= _text.Length) return (char)0;
-                return chars.Contains(_text[_index]) ? _text[_index] : (char)0;
-            }
-
-            private string TakeWhile(params char[] chars)
-            {
-                var buffer = "";
-                while (_index < _text.Length)
-                {
-                    if (chars.Contains(_text[_index])) break;
-                    buffer += _text[_index++];
-                }
-                return buffer;
-            }
-
-            private TokenType DeterminTokenType(string str)
-            {
-                var chars = new[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '-' };
-                var signed = str[0] == '-';
-                var point = str.Contains(".");
-                var mayDigits = true;
-                for (var i = 0; i < str.Length; ++i)
-                {
-                    mayDigits &= chars.Contains(str[i]);
-                }
-                if (!mayDigits)
-                {
-                    var s = str.ToLowerInvariant();
-                    return (s == "true" || s == "false") ? TokenType.Bool : (s == "null" ? TokenType.Null : TokenType.Symbol);
-                }
-                if (point) return TokenType.Double;
-                return signed ? TokenType.Long : TokenType.ULong;
-            }
-
-            public IEnumerable<CompilerToken> Parse(bool errorRecovery = false)
-            {
-                _index = 0;
-
-                var quote = false;
-                var qchar = default(char);
-                var buffer = "";
-                var start = _index;
-
-                while (_index < _text.Length)
-                {
-                    // read chars in quoted
-                    while (quote)
-                    {
-                        var c = LexChar();
-                        if (c == '\0')
-                        {
-                            if (!errorRecovery) throw new ParseException("Unexpected string termination.", _index - 1);
-                            // recovery error
-                            c = qchar;
-                        }
-                        if (c == qchar)
-                        {
-                            yield return new CompilerToken { Type = TokenType.String, Value = buffer, Position = start, Length = _index - start };
-                            buffer = "";
-                            quote = false;
-                            break;
-                        }
-                        if (c == '\\')
-                        {
-                            var d = PeekChar();
-                            if (d == qchar)
-                            {
-                                buffer += qchar;
-                                LexChar();
-                            }
-                            else if (d == '\\')
-                            {
-                                buffer += '\\';
-                                LexChar();
-                            }
-                            continue;
-                        }
-                        buffer += c;
-                    }
-                    SkipWhile(' ', '\t', '\n', '\r');
-                    start = _index;
-                    char current;
-                    switch ((current = LexChar()))
-                    {
-                        // EOF
-                        case (char)0:
-                            yield break;
-                        // その他トークン
-                        case '(':
-                            yield return new CompilerToken { Type = TokenType.OpenBracket, Position = start, Length = 1 };
-                            break;
-                        case ')':
-                            yield return new CompilerToken { Type = TokenType.CloseBracket, Position = start, Length = 1 };
-                            break;
-                        case '{':
-                            yield return new CompilerToken { Type = TokenType.ArrayStart, Position = start, Length = 1 };
-                            break;
-                        case '}':
-                            yield return new CompilerToken { Type = TokenType.ArrayEnd, Position = start, Length = 1 };
-                            break;
-                        case ',':
-                            yield return new CompilerToken { Type = TokenType.ArrayDelimiter, Position = start, Length = 1 };
-                            break;
-                        case '=':
-                            switch (LexChars('~', '=', '@', '>'))
-                            {
-                                case '~':
-                                    yield return new CompilerToken { Type = TokenType.Regexp, Position = start, Length = 2 };
-                                    break;
-                                case '=':
-                                    if (LexChars('i') == 'i')
-                                        yield return new CompilerToken { Type = TokenType.EqualsI, Position = start, Length = 2 };
-                                    else
-                                        yield return new CompilerToken { Type = TokenType.Equals, Position = start, Length = 2 };
-                                    break;
-                                case '@':
-                                    if (LexChars('i') == 'i')
-                                        yield return new CompilerToken { Type = TokenType.ContainsI, Position = start, Length = 2 };
-                                    else
-                                        yield return new CompilerToken { Type = TokenType.Contains, Position = start, Length = 2 };
-                                    break;
-                                case '>':
-                                    yield return new CompilerToken { Type = TokenType.Lambda, Position = start, Length = 2 };
-                                    break;
-                                default:
-                                    if (!errorRecovery) throw new ParseException("Must be '=', '~' or '@' after '='.", _index);
-                                    yield return new CompilerToken { Type = TokenType.Symbol, Value = "=", Position = start, Length = 1 };
-                                    break;
-                            }
-                            break;
-                        case '!':
-                            switch (LexChars('=', '~'))
-                            {
-                                case '=':
-                                    switch (LexChars('@', 'i'))
-                                    {
-                                        case 'i':
-                                            yield return new CompilerToken { Type = TokenType.NotEqualsI, Position = start, Length = 3 };
-                                            break;
-                                        case '@':
-                                            if (LexChars('i') == 'i')
-                                                yield return new CompilerToken { Type = TokenType.NotContainsI, Position = start, Length = 4 };
-                                            else
-                                                yield return new CompilerToken { Type = TokenType.NotContains, Position = start, Length = 3 };
-                                            break;
-                                        default:
-                                            yield return new CompilerToken { Type = TokenType.NotEquals, Position = start, Length = 2 };
-                                            break;
-                                    }
-                                    break;
-                                case '~':
-                                    yield return new CompilerToken { Type = TokenType.NotRegexp, Position = start, Length = 2 };
-                                    break;
-                                default:
-                                    yield return new CompilerToken { Type = TokenType.Not, Position = start, Length = 1 };
-                                    break;
-                            }
-                            break;
-                        case '&':
-                            if (LexChars('&') != 0)
-                                yield return new CompilerToken { Type = TokenType.And, Position = start, Length = 2 };
-                            else
-                            {
-                                if (!errorRecovery) throw new ParseException("Must be '&' after '&'.", _index);
-                                yield return new CompilerToken { Type = TokenType.Symbol, Value = "&", Position = start, Length = 1 };
-                            }
-                            break;
-                        case '|':
-                            if (LexChars('|') != 0)
-                                yield return new CompilerToken { Type = TokenType.Or, Position = start, Length = 2 };
-                            else
-                            {
-                                if (!errorRecovery) throw new ParseException("Must be '|' after '|'.", _index);
-                                yield return new CompilerToken { Type = TokenType.Symbol, Value = "|", Position = start, Length = 1 };
-                            }
-                            break;
-                        case '"':
-                            quote = true;
-                            qchar = '"';
-                            break;
-                        case '\'':
-                            quote = true;
-                            qchar = '\'';
-                            break;
-                        case '>':
-                            if (LexChars('=') != 0)
-                                yield return new CompilerToken { Type = TokenType.GreaterThanEquals, Position = start, Length = 2 };
-                            else
-                                yield return new CompilerToken { Type = TokenType.GreaterThan, Position = start, Length = 1 };
-                            break;
-                        case '<':
-                            if (LexChars('=') != 0)
-                                yield return new CompilerToken { Type = TokenType.LessThanEquals, Position = start, Length = 2 };
-                            else
-                                yield return new CompilerToken { Type = TokenType.LessThan, Position = start, Length = 1 };
-                            break;
-                        // 文字列とか数字とかそのへん
-                        default:
-                            var str = current + TakeWhile('(', ')', '{', '}', ',', '=', '!', '&', '|', '"',
-                                '\'', '>', '<', ' ', '\t', '\r', '\n');
-                            if (!String.IsNullOrEmpty(str))
-                                yield return new CompilerToken { Type = DeterminTokenType(str), Value = str, Position = start, Length = _index - start };
-                            break;
-                    }
-                }
-            }
-
-            public Tokenizer(string text)
-            {
-                _text = text;
-            }
-        }
-
-        private Dictionary<TokenType, byte> OpPriority = new Dictionary<TokenType, byte>
-        {
-            {TokenType.Not, 0},
-            {TokenType.LessThan, 1},
-            {TokenType.GreaterThan, 1},
-            {TokenType.LessThanEquals, 1},
-            {TokenType.GreaterThanEquals, 1},
-            {TokenType.Equals, 2},
-            {TokenType.EqualsI, 2},
-            {TokenType.NotEquals, 2},
-            {TokenType.NotEqualsI, 2},
-            {TokenType.Regexp, 2},
-            {TokenType.NotRegexp, 2},
-            {TokenType.Contains, 2},
-            {TokenType.ContainsI, 2},
-            {TokenType.NotContains, 2},
-            {TokenType.NotContainsI, 2},
-            {TokenType.And, 3},
-            {TokenType.Or, 3},
-            {TokenType.Lambda, 99 }
-        };
-
-        private delegate Expression BinaryExpressionBuilder(Expression lhs, Expression rhs);
-
-        private delegate Expression UnaryExpressionBuilder(Expression expr);
-
+        
         private ASTNode Tokenize(string text)
         {
             var tokenizer = new Tokenizer(text);
-            return GenerateAST(ReorderTokens(tokenizer.Parse()));
+            return ASTBuilder.Generate(tokenizer.Parse());
         }
-
-        private ASTNode GenerateAST(IEnumerable<CompilerToken> list)
-        {
-            var work = new Stack<ASTNode>();
-            foreach (var token in list)
-            {
-                // 配列の終端見つけました！
-                if (token.Type == TokenType.ArrayEnd)
-                {
-                    var node = work.Peek();
-                    var arrayNode = new ASTNode();
-                    while (node.Token.Type != TokenType.ArrayStart)
-                    {
-                        if (arrayNode.Right == null) { arrayNode.Right = node; }
-                        else if (arrayNode.Left == null) { arrayNode.Left = node; }
-                        else
-                        {
-                            arrayNode.Token = new CompilerToken { Type = TokenType.ArrayDelimiter, Value = ",", Length = 1 };
-                            arrayNode = new ASTNode { Right = arrayNode, Left = node };
-                        }
-                        work.Pop();
-                        node = work.Peek();
-                    }
-                    arrayNode.Token = new CompilerToken { Type = TokenType.ArrayNode, Value = "{}", Length = 2 };
-                    if (arrayNode.Left == null)
-                    {
-                        arrayNode.Left = arrayNode.Right;
-                        arrayNode.Right = null;
-                    }
-                    work.Pop();
-                    work.Push(arrayNode);
-                    continue;
-                }
-                if (IsOperand(token))
-                {
-                    // 2個とってExpressionにする
-                    var rhs = work.Pop();
-                    var lhs = work.Pop();
-                    work.Push(token.Type == TokenType.Not
-                        ? new ASTNode { Token = token, Left = rhs }
-                        : new ASTNode { Token = token, Left = lhs, Right = rhs });
-                    continue;
-                }
-                work.Push(new ASTNode { Token = token });
-            }
-            if (work.Count != 1) throw new ParseException("Syntax error.", -1);
-            return work.Peek(); // AST comes here!
-        }
-
-        private IEnumerable<CompilerToken> ReorderTokens(IEnumerable<CompilerToken> list)
-        {
-            var work = new Stack<CompilerToken>();
-            CompilerToken p1, p2 = null;
-            var inArray = false;
-            foreach (var token in list)
-            {
-                p1 = p2;
-                p2 = token;
-                if (inArray && token.Type == TokenType.ArrayDelimiter)
-                    continue;
-                if (token.Type == TokenType.ArrayEnd) inArray = false;
-                if (inArray && p1 != null &&
-                    (p1.Type != TokenType.ArrayStart && p1.Type != TokenType.ArrayDelimiter))
-                    throw new ParseException("Array elements must be delimitered ','.", -1);
-                if (token.Type == TokenType.ArrayStart) inArray = true;
-                if (IsSymbol(token) || token.Type == TokenType.ArrayStart || token.Type == TokenType.ArrayEnd)
-                {
-                    yield return token;
-                    continue;
-                }
-                if (token.Type == TokenType.CloseBracket)
-                {
-                    while (work.Peek().Type != TokenType.OpenBracket)
-                    {
-                        yield return work.Pop();
-                    }
-                    work.Pop();
-                    continue;
-                }
-                if (token.Type == TokenType.OpenBracket)
-                {
-                    work.Push(token);
-                    continue;
-                }
-                while (work.Count != 0)
-                {
-                    var t = work.Peek();
-                    if (t.Type == TokenType.OpenBracket) break;
-                    if (OpPriority[t.Type] >= OpPriority[token.Type])
-                        break;
-                    yield return work.Pop();
-                }
-                work.Push(token);
-                if (token.Type == TokenType.Not)
-                {
-                    yield return new CompilerToken { Type = TokenType.Nop };
-                }
-            }
-            while (work.Count != 0) yield return work.Pop();
-        }
-
-        private readonly ParameterExpression _rootParameter = Expression.Parameter(typeof(T), "status");
-        private readonly Dictionary<string, ParameterExpression> _env = new Dictionary<string, ParameterExpression>();
 
         private object CompileOne(ASTNode ast)
         {
@@ -519,7 +58,7 @@ namespace Tetraptera.Models
                 }
                 return items.ToArray();
             }
-            if (!IsOperand(ast.Token))
+            if (!ast.Token.IsOperand())
             {
                 return ast.Token;
             }
@@ -1284,22 +823,6 @@ namespace Tetraptera.Models
             return ret;
         }
 
-        private bool IsOperand(CompilerToken t)
-        {
-            return OpPriority.ContainsKey(t.Type);
-        }
-
-        private bool IsSymbol(CompilerToken t)
-        {
-            return t.Type == TokenType.Symbol
-                   || t.Type == TokenType.String
-                   || t.Type == TokenType.Double
-                   || t.Type == TokenType.Long
-                   || t.Type == TokenType.ULong
-                   || t.Type == TokenType.Bool
-                   || t.Type == TokenType.Null;
-        }
-
         public static IEnumerable<CompilerToken> Parse(string text)
         {
             var c = new Tokenizer(text);
@@ -1309,7 +832,7 @@ namespace Tetraptera.Models
         public static Func<T, bool> Compile(IEnumerable<CompilerToken> tokenList)
         {
             var c = new FilterCompiler<T>();
-            var ast = c.GenerateAST(c.ReorderTokens(tokenList));
+            var ast = ASTBuilder.Generate(tokenList);
             return c.CompileSyntax(ast);
         }
 
@@ -1443,14 +966,6 @@ namespace Tetraptera.Models
                 }
             }
             return list;
-        }
-
-        public class ParseException : Exception
-        {
-            public ParseException(string text, int index)
-                : base(String.Format("{0}, Position: {1}", text, index))
-            {
-            }
         }
     }
 }
