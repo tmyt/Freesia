@@ -21,13 +21,7 @@ namespace Freesia
         private readonly Dictionary<string, ParameterExpression> _env = new Dictionary<string, ParameterExpression>();
 
         private static Dictionary<string, Func<T, bool>> _functions;
-        public static Dictionary<string, Func<T, bool>> Functions
-        {
-            get
-            {
-                return _functions ?? (_functions = new Dictionary<string, Func<T, bool>>());
-            }
-        }
+        public static Dictionary<string, Func<T, bool>> Functions => _functions ?? (_functions = new Dictionary<string, Func<T, bool>>());
 
         public static string UserFunctionNamespace { get; set; }
 
@@ -45,10 +39,9 @@ namespace Freesia
         {
             if (ast.Token.Type == TokenType.ArrayNode)
             {
-                var current = ast;
                 var items = new List<object>();
                 if (ast.Left != null) items.Add(ast.Left.Token);
-                current = ast.Right;
+                var current = ast.Right;
                 while (current != null)
                 {
                     if (current.Token.Type == TokenType.ArrayDelimiter)
@@ -151,7 +144,7 @@ namespace Freesia
                 type = Nullable.GetUnderlyingType(type);
             if (fromValue is object[])
             {
-                var objs = fromValue as object[];
+                var objs = (object[])fromValue;
                 for (var i = 0; i < objs.Length; ++i)
                 {
                     if (IsConstant(objs[i]))
@@ -166,7 +159,7 @@ namespace Freesia
         {
             if (expr is object[])
             {
-                var objs = expr as object[];
+                var objs = (object[])expr;
                 var exprs = new Queue<Expression>(objs.Select(o => MakeUnaryExpression(op, o)));
                 var e = exprs.Dequeue();
                 while (exprs.Count != 0)
@@ -356,7 +349,7 @@ namespace Freesia
             }
             if (o is CompilerToken)
             {
-                var t = o as CompilerToken;
+                var t = (CompilerToken)o;
                 var method = typeof(string).GetRuntimeMethod("ToLowerInvariant", new Type[0]);
                 if (t.Type == TokenType.Symbol)
                 {
@@ -387,7 +380,7 @@ namespace Freesia
             if (o is Expression) return false;
             if (o is CompilerToken)
             {
-                var t = o as CompilerToken;
+                var t = (CompilerToken) o;
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
@@ -429,11 +422,11 @@ namespace Freesia
             if (o is Expression) return false;
             if (o is CompilerToken)
             {
-                var t = o as CompilerToken;
+                var t = (CompilerToken) o;
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
-                        var type = GetSymbolType(o as CompilerToken);
+                        var type = GetSymbolType((CompilerToken) o);
                         if (!type.GetTypeInfo().IsValueType) return false;
                         if (Nullable.GetUnderlyingType(type) != null) return true;
                         return false;
@@ -452,9 +445,9 @@ namespace Freesia
         private bool IsNullValue(object o)
         {
             if (o == null) return true;
-            if (o is ConstantExpression) return (o as ConstantExpression).Value == null;
+            if (o is ConstantExpression) return ((ConstantExpression) o).Value == null;
             if (o is Expression) return false;
-            if (o is CompilerToken) return (o as CompilerToken).Type == TokenType.Null;
+            if (o is CompilerToken) return ((CompilerToken) o).Type == TokenType.Null;
             return false;
         }
 
@@ -462,12 +455,12 @@ namespace Freesia
         {
             if (o is object[])
             {
-                return (o as object[]).Select(IsConstant).Aggregate(false, (n, b) => n | b);
+                return ((object[]) o).Select(IsConstant).Aggregate(false, (n, b) => n | b);
             }
             if (o is Expression) return false;
             if (o is CompilerToken)
             {
-                var t = o as CompilerToken;
+                var t = (CompilerToken) o;
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
@@ -488,7 +481,7 @@ namespace Freesia
         {
             if (o is CompilerToken)
             {
-                var t = o as CompilerToken;
+                var t = (CompilerToken) o;
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
@@ -511,10 +504,10 @@ namespace Freesia
 
         private Type GetValueType(object o)
         {
-            if (o is Expression) return (o as Expression).Type;
+            if (o is Expression) return ((Expression) o).Type;
             if (o is CompilerToken)
             {
-                var t = o as CompilerToken;
+                var t = (CompilerToken) o;
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
@@ -538,10 +531,10 @@ namespace Freesia
 
         private Expression MakeExpression(object o)
         {
-            if (o is Expression) return o as Expression;
+            if (o is Expression) return (Expression) o;
             if (o is CompilerToken)
             {
-                var t = o as CompilerToken;
+                var t = (CompilerToken) o;
                 switch (t.Type)
                 {
                     case TokenType.Symbol:

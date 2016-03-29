@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace Freesia.Types
 {
@@ -13,7 +12,7 @@ namespace Freesia.Types
 
         public override string ToString()
         {
-            return String.Format("{0}: {1}", Type, Value);
+            return $"{Type}: {Value}";
         }
     }
 
@@ -26,7 +25,7 @@ namespace Freesia.Types
 
         public override string ToString()
         {
-            return String.Format("{0}: {1}", Type, Value);
+            return $"{Type}: {Value}";
         }
 
         public bool IsOperand()
