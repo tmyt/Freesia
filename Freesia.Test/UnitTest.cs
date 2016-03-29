@@ -286,6 +286,14 @@ namespace FreesiaTest
         }
 
         [TestMethod]
+        public void AllOps()
+        {
+            FilterCompiler<TestClass>.Compile(
+                "text == 'a' && (text ==i 'a' || (text =@ 'a' && text =@i 'a')) || text =~ 'a' || text != 'a' || text !=i 'a' || text !=@ 'a' || text !=@i 'a' ||" +
+                "text !~ 'a' && (id == 0 || id != 0 || id < 0 || id > 0 || id <= 0 || id >= 0) && favorited || !favorited && (favorited || favorited && false)");
+        }
+
+        [TestMethod]
         public void StressTest()
         {
             int Iteration = 500, c = 0;
