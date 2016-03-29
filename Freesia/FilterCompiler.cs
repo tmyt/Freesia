@@ -30,7 +30,11 @@ namespace Freesia
         }
 
         public static string UserFunctionNamespace { get; set; }
-        
+
+        internal FilterCompiler()
+        {
+        }
+
         private ASTNode Tokenize(string text)
         {
             var tokenizer = new Tokenizer(text);
