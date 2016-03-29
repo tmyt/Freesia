@@ -79,6 +79,7 @@ namespace Tetraptera.Models
             Bool,
             Null,
             Nop,
+            ArrayNode,
         }
 
         public class CompilerToken
@@ -91,6 +92,18 @@ namespace Tetraptera.Models
             public override string ToString()
             {
                 return String.Format("{0}: {1}", Type, Value);
+            }
+        }
+
+        public class ASTNode
+        {
+            public CompilerToken Token { get; set; }
+            public ASTNode Left { get; set; }
+            public ASTNode Right { get; set; }
+
+            internal string Dump()
+            {
+                return Left?.Dump() + Token.Value + Right?.Dump();
             }
         }
 
@@ -364,17 +377,66 @@ namespace Tetraptera.Models
             {TokenType.NotContains, 2},
             {TokenType.NotContainsI, 2},
             {TokenType.And, 3},
-            {TokenType.Or, 3}
+            {TokenType.Or, 3},
+            {TokenType.Lambda, 99 }
         };
 
         private delegate Expression BinaryExpressionBuilder(Expression lhs, Expression rhs);
 
         private delegate Expression UnaryExpressionBuilder(Expression expr);
 
-        private IEnumerable<CompilerToken> Tokenize(string text)
+        private ASTNode Tokenize(string text)
         {
             var tokenizer = new Tokenizer(text);
-            return ReorderTokens(tokenizer.Parse());
+            return GenerateAST(ReorderTokens(tokenizer.Parse()));
+        }
+
+        private ASTNode GenerateAST(IEnumerable<CompilerToken> list)
+        {
+            var work = new Stack<ASTNode>();
+            foreach (var token in list)
+            {
+                // 配列の終端見つけました！
+                if (token.Type == TokenType.ArrayEnd)
+                {
+                    var node = work.Peek();
+                    var arrayNode = new ASTNode();
+                    while (node.Token.Type != TokenType.ArrayStart)
+                    {
+                        if (arrayNode.Right == null) { arrayNode.Right = node; }
+                        else if (arrayNode.Left == null) { arrayNode.Left = node; }
+                        else
+                        {
+                            arrayNode.Token = new CompilerToken { Type = TokenType.ArrayDelimiter, Value = ",", Length = 1 };
+                            arrayNode = new ASTNode { Right = arrayNode, Left = node };
+                        }
+                        work.Pop();
+                        node = work.Peek();
+                    }
+                    arrayNode.Token = new CompilerToken { Type = TokenType.ArrayNode, Value = "{}", Length = 2 };
+                    if (arrayNode.Left == null)
+                    {
+                        arrayNode.Left = arrayNode.Right;
+                        arrayNode.Right = null;
+                    }
+                    work.Pop();
+                    work.Push(arrayNode);
+                    continue;
+                }
+                if (IsOperand(token))
+                {
+                    // 2個とってExpressionにする
+                    var rhs = work.Pop();
+                    var lhs = work.Pop();
+                    work.Push(token.Type == TokenType.Not
+                        ? new ASTNode { Token = token, Left = rhs }
+                        : new ASTNode { Token = token, Left = lhs, Right = rhs });
+                    continue;
+                }
+                work.Push(new ASTNode { Token = token });
+            }
+            if (work.Count != 1) throw new ParseException("Syntax error.", -1);
+            return work.Peek(); // AST comes here!
         }
 
         private IEnumerable<CompilerToken> ReorderTokens(IEnumerable<CompilerToken> list)
@@ -431,131 +493,99 @@ namespace Tetraptera.Models
 
         private readonly ParameterExpression _rootParameter = Expression.Parameter(typeof(T), "status");
 
-        private Func<T, bool> CompileSyntax(IEnumerable<CompilerToken> list)
+        private object CompileOne(ASTNode ast)
         {
-            var work = new Stack<object>();
-            foreach (var token in list)
+            if (ast.Token.Type == TokenType.ArrayNode)
             {
-                if (IsOperand(token))
+                var current = ast;
+                var items = new List<object>();
+                if (ast.Left != null) items.Add(ast.Left.Token);
+                current = ast.Right;
+                while (current != null)
                 {
-                    // 2個とってExpressionにする
-                    var rhs = work.Pop();
-                    if (rhs is CompilerToken && (rhs as CompilerToken).Type == TokenType.ArrayEnd)
+                    if (current.Token.Type == TokenType.ArrayDelimiter)
                     {
-                        var array = new List<object>();
-                        var obj = work.Peek();
-                        while ((obj is CompilerToken && (obj as CompilerToken).Type != TokenType.ArrayStart) ||
-                               !(obj is CompilerToken))
-                        {
-                            array.Add(obj);
-                            work.Pop();
-                            obj = work.Peek();
-                        }
-                        if ((obj as CompilerToken).Type == TokenType.ArrayStart) work.Pop();
-                        rhs = array.ToArray();
+                        items.Add(current.Left.Token);
+                        current = current.Right;
+                        continue;
                     }
-
-                    var lhs = work.Pop();
-                    if (lhs is CompilerToken && (lhs as CompilerToken).Type == TokenType.ArrayEnd)
-                    {
-                        var array = new List<object>();
-                        var obj = work.Peek();
-                        while ((obj is CompilerToken && (obj as CompilerToken).Type != TokenType.ArrayStart) ||
-                               !(obj is CompilerToken))
-                        {
-                            array.Add(obj);
-                            work.Pop();
-                            obj = work.Peek();
-                        }
-                        if ((obj as CompilerToken).Type == TokenType.ArrayStart) work.Pop();
-                        lhs = array.ToArray();
-                    }
-                    if (token.Type == TokenType.Not)
-                    {
-                        work.Push(MakeUnaryExpression(Expression.Not, rhs));
-                    }
-                    else
-                    {
-                        // 型キャスト
-                        if (IsConstant(lhs) || IsConstant(rhs))
-                        {
-                            bool iscl = IsConstant(lhs), iscr = IsConstant(rhs);
-                            if (iscl && !iscr)
-                                lhs = MakeConvertExpression(rhs, lhs);
-                            if (!iscl && iscr)
-                                rhs = MakeConvertExpression(lhs, rhs);
-                            if (iscl && iscr) { } // 両方Constとか知らない
-                        }
-                        switch (token.Type)
-                        {
-                            case TokenType.Equals:
-                                work.Push(MakeBinaryExpression(Expression.Equal, lhs, rhs, IsNullValue(lhs) || IsNullValue(rhs)));
-                                break;
-                            case TokenType.EqualsI:
-                                work.Push(MakeInsensitiveBinaryExpression(Expression.Equal, lhs, rhs));
-                                break;
-                            case TokenType.NotEquals:
-                                work.Push(MakeBinaryExpression(Expression.NotEqual, lhs, rhs, IsNullValue(lhs) || IsNullValue(rhs)));
-                                break;
-                            case TokenType.NotEqualsI:
-                                work.Push(MakeInsensitiveBinaryExpression(Expression.NotEqual, lhs, rhs));
-                                break;
-                            case TokenType.Regexp:
-                                work.Push(MakeBinaryExpression(MakeRegexExpression, lhs, rhs));
-                                break;
-                            case TokenType.NotRegexp:
-                                work.Push(MakeUnaryExpression(Expression.Not, MakeBinaryExpression(MakeRegexExpression, lhs, rhs)));
-                                break;
-                            case TokenType.Contains:
-                                work.Push(MakeBinaryExpression(MakeContainsExpression, lhs, rhs));
-                                break;
-                            case TokenType.ContainsI:
-                                work.Push(MakeInsensitiveBinaryExpression(MakeContainsExpression, lhs, rhs));
-                                break;
-                            case TokenType.NotContains:
-                                work.Push(MakeUnaryExpression(Expression.Not, MakeBinaryExpression(MakeContainsExpression, lhs, rhs)));
-                                break;
-                            case TokenType.NotContainsI:
-                                work.Push(MakeUnaryExpression(Expression.Not, MakeInsensitiveBinaryExpression(MakeContainsExpression, lhs, rhs)));
-                                break;
-                            case TokenType.And:
-                                work.Push(MakeBinaryExpression(Expression.AndAlso, lhs, rhs));
-                                break;
-                            case TokenType.Or:
-                                work.Push(MakeBinaryExpression(Expression.OrElse, lhs, rhs));
-                                break;
-                            case TokenType.LessThan:
-                                work.Push(MakeBinaryExpression(Expression.LessThan, lhs, rhs));
-                                break;
-                            case TokenType.GreaterThan:
-                                work.Push(MakeBinaryExpression(Expression.GreaterThan, lhs, rhs));
-                                break;
-                            case TokenType.LessThanEquals:
-                                work.Push(MakeBinaryExpression(Expression.LessThanOrEqual, lhs, rhs));
-                                break;
-                            case TokenType.GreaterThanEquals:
-                                work.Push(MakeBinaryExpression(Expression.GreaterThanOrEqual, lhs, rhs));
-                                break;
-                            default:
-                                throw new ArgumentOutOfRangeException();
-                        }
-                    }
-                    continue;
+                    items.Add(current.Token);
+                    break;
                 }
-                work.Push(token);
+                return items.ToArray();
             }
-            if (work.Count != 1) throw new ParseException("Syntax error.", -1);
-            if (work.Peek() is CompilerToken)
+            if (!IsOperand(ast.Token))
             {
-                var t = work.Pop();
-                if (MayNullable(t)) t = MakeValidation(t);
-                work.Push(MakeExpression(t));
+                return ast.Token;
             }
-            if ((work.Peek() as Expression).Type != typeof(bool))
+            if (ast.Token.Type == TokenType.Not)
+            {
+                // Here is Unary
+                return MakeUnaryExpression(Expression.Not, CompileOne(ast.Left));
+            }
+            var lhs = CompileOne(ast.Left);
+            var rhs = CompileOne(ast.Right);
+            // 型キャスト
+            if (IsConstant(lhs) || IsConstant(rhs))
+            {
+                bool iscl = IsConstant(lhs), iscr = IsConstant(rhs);
+                if (iscl && !iscr)
+                    lhs = MakeConvertExpression(rhs, lhs);
+                if (!iscl && iscr)
+                    rhs = MakeConvertExpression(lhs, rhs);
+                if (iscl && iscr) { } // 両方Constとか知らない
+            }
+            switch (ast.Token.Type)
+            {
+                case TokenType.Equals:
+                    return MakeBinaryExpression(Expression.Equal, lhs, rhs, IsNullValue(lhs) || IsNullValue(rhs));
+                case TokenType.EqualsI:
+                    return MakeInsensitiveBinaryExpression(Expression.Equal, lhs, rhs);
+                case TokenType.NotEquals:
+                    return MakeBinaryExpression(Expression.NotEqual, lhs, rhs,
+                        IsNullValue(lhs) || IsNullValue(rhs));
+                case TokenType.NotEqualsI:
+                    return MakeInsensitiveBinaryExpression(Expression.NotEqual, lhs, rhs);
+                case TokenType.Regexp:
+                    return MakeBinaryExpression(MakeRegexExpression, lhs, rhs);
+                case TokenType.NotRegexp:
+                    return MakeUnaryExpression(Expression.Not,
+                        MakeBinaryExpression(MakeRegexExpression, lhs, rhs));
+                case TokenType.Contains:
+                    return MakeBinaryExpression(MakeContainsExpression, lhs, rhs);
+                case TokenType.ContainsI:
+                    return MakeInsensitiveBinaryExpression(MakeContainsExpression, lhs, rhs);
+                case TokenType.NotContains:
+                    return MakeUnaryExpression(Expression.Not,
+                        MakeBinaryExpression(MakeContainsExpression, lhs, rhs));
+                case TokenType.NotContainsI:
+                    return MakeUnaryExpression(Expression.Not,
+                        MakeInsensitiveBinaryExpression(MakeContainsExpression, lhs, rhs));
+                case TokenType.And:
+                    return MakeBinaryExpression(Expression.AndAlso, lhs, rhs);
+                case TokenType.Or:
+                    return MakeBinaryExpression(Expression.OrElse, lhs, rhs);
+                case TokenType.LessThan:
+                    return MakeBinaryExpression(Expression.LessThan, lhs, rhs);
+                case TokenType.GreaterThan:
+                    return MakeBinaryExpression(Expression.GreaterThan, lhs, rhs);
+                case TokenType.LessThanEquals:
+                    return MakeBinaryExpression(Expression.LessThanOrEqual, lhs, rhs);
+                case TokenType.GreaterThanEquals:
+                    return MakeBinaryExpression(Expression.GreaterThanOrEqual, lhs, rhs);
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        private Func<T, bool> CompileSyntax(ASTNode ast)
+        {
+            var root = MakeWrappedExpression(CompileOne(ast));
+            if (root.Type != typeof(bool))
             {
                 throw new ParseException("Expression couldn't evaluate as boolean.", -1);
             }
-            var trycatch = Expression.TryCatch(work.Pop() as Expression,
+            var trycatch = Expression.TryCatch(root,
                 Expression.Catch(typeof(Exception), Expression.Constant(false)));
             var expr = Expression.Lambda<Func<T, bool>>(trycatch, _rootParameter);
             return expr.Compile();
@@ -780,6 +810,13 @@ namespace Tetraptera.Models
                 }
             }
             throw new ParseException("case insensitive option can only use to Property or String.", -1);
+        }
+
+        private Expression MakeWrappedExpression(object t)
+        {
+            if (t is Expression) return (Expression)t;
+            if (MayNullable(t)) t = MakeValidation(t);
+            return MakeExpression(t);
         }
 
         private bool MayNullable(object o, bool checkRecursive = true)
@@ -1250,8 +1287,8 @@ namespace Tetraptera.Models
         public static Func<T, bool> Compile(IEnumerable<CompilerToken> tokenList)
         {
             var c = new FilterCompiler<T>();
-            var rpn = c.ReorderTokens(tokenList);
-            return c.CompileSyntax(rpn);
+            var ast = c.GenerateAST(c.ReorderTokens(tokenList));
+            return c.CompileSyntax(ast);
         }
 
         public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<CompilerToken> tokenList)
@@ -1303,8 +1340,8 @@ namespace Tetraptera.Models
         public static Func<T, bool> Compile(string text)
         {
             var c = new FilterCompiler<T>();
-            var rpn = c.Tokenize(text);
-            return c.CompileSyntax(rpn);
+            var ast = c.Tokenize(text);
+            return c.CompileSyntax(ast);
         }
 
         public static IEnumerable<SyntaxInfo> ParseForSyntaxHightlight(string text)
@@ -1348,12 +1385,12 @@ namespace Tetraptera.Models
             prefix = lookup ? "" : q[0].Value;
             // 型情報を検索
             var targetType = string.IsNullOrEmpty(symbol) ? typeof(T) : f.GetSymbolType(new CompilerToken
-                {
-                    Length = symbol.Length,
-                    Position = 0,
-                    Type = TokenType.Symbol,
-                    Value = symbol
-                });
+            {
+                Length = symbol.Length,
+                Position = 0,
+                Type = TokenType.Symbol,
+                Value = symbol
+            });
             // 型が見つからないときは空
             if (targetType == null) return new List<string>();
             // プロパティ一覧を返却
