@@ -4,20 +4,19 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using Tetraptera.Models.Twitter.Data;
 
 namespace Tetraptera.Models
 {
-    public class FilterCompiler
+    public class FilterCompiler<T>
     {
         private class UserFunctionTypePlaceholder { }
 
-        private static Dictionary<string, Func<Status, bool>> _functions;
-        public static Dictionary<string, Func<Status, bool>> Functions
+        private static Dictionary<string, Func<T, bool>> _functions;
+        public static Dictionary<string, Func<T, bool>> Functions
         {
             get
             {
-                return _functions ?? (_functions = new Dictionary<string, Func<Status, bool>>());
+                return _functions ?? (_functions = new Dictionary<string, Func<T, bool>>());
             }
         }
 
@@ -430,9 +429,9 @@ namespace Tetraptera.Models
             while (work.Count != 0) yield return work.Pop();
         }
 
-        private readonly ParameterExpression _rootParameter = Expression.Parameter(typeof(Status), "status");
+        private readonly ParameterExpression _rootParameter = Expression.Parameter(typeof(T), "status");
 
-        private Func<Status, bool> CompileSyntax(IEnumerable<CompilerToken> list)
+        private Func<T, bool> CompileSyntax(IEnumerable<CompilerToken> list)
         {
             var work = new Stack<object>();
             foreach (var token in list)
@@ -558,7 +557,7 @@ namespace Tetraptera.Models
             }
             var trycatch = Expression.TryCatch(work.Pop() as Expression,
                 Expression.Catch(typeof(Exception), Expression.Constant(false)));
-            var expr = Expression.Lambda<Func<Status, bool>>(trycatch, _rootParameter);
+            var expr = Expression.Lambda<Func<T, bool>>(trycatch, _rootParameter);
             return expr.Compile();
         }
 
@@ -984,7 +983,7 @@ namespace Tetraptera.Models
         {
             if (t.Type != TokenType.Symbol) throw new ArgumentException("argument token is not symbol.");
             var targetExpression = (Expression)_rootParameter;
-            var targetType = typeof(Status);
+            var targetType = typeof(T);
             var properties = (IsNullable(t) ? t.Value + ".Value" : t.Value).Split('.');
             foreach (var prop in properties)
             {
@@ -996,7 +995,7 @@ namespace Tetraptera.Models
                     {
                         var func = Functions[propname.ToLowerInvariant()];
                         return Expression.Call(Expression.Constant(func),
-                            func.GetType().GetRuntimeMethod("Invoke", new[] { typeof(Status) }), _rootParameter);
+                            func.GetType().GetRuntimeMethod("Invoke", new[] { typeof(T) }), _rootParameter);
                     }
                     throw new ParseException(String.Format("Property '{0}' is not found.", t.Value), -1);
                 }
@@ -1040,7 +1039,7 @@ namespace Tetraptera.Models
         {
             if (t.Type != TokenType.Symbol) return null;
             var properties = t.Value.Split('.');
-            var statusType = typeof(Status);
+            var statusType = typeof(T);
             var targetType = statusType;
             foreach (var prop in properties)
             {
@@ -1089,7 +1088,7 @@ namespace Tetraptera.Models
         {
             if (t.Type != TokenType.Symbol) yield break;
             var properties = t.Value.Split('.');
-            var statusType = typeof(Status);
+            var statusType = typeof(T);
             var targetType = statusType;
             var pos = t.Position;
             foreach (var prop in properties)
@@ -1248,9 +1247,9 @@ namespace Tetraptera.Models
             return c.Parse(true);
         }
 
-        public static Func<Status, bool> Compile(IEnumerable<CompilerToken> tokenList)
+        public static Func<T, bool> Compile(IEnumerable<CompilerToken> tokenList)
         {
-            var c = new FilterCompiler();
+            var c = new FilterCompiler<T>();
             var rpn = c.ReorderTokens(tokenList);
             return c.CompileSyntax(rpn);
         }
@@ -1301,9 +1300,9 @@ namespace Tetraptera.Models
             }
         }
 
-        public static Func<Status, bool> Compile(string text)
+        public static Func<T, bool> Compile(string text)
         {
-            var c = new FilterCompiler();
+            var c = new FilterCompiler<T>();
             var rpn = c.Tokenize(text);
             return c.CompileSyntax(rpn);
         }
@@ -1316,7 +1315,7 @@ namespace Tetraptera.Models
 
         public static IEnumerable<string> Completion(string text, out string prefix)
         {
-            var f = new FilterCompiler();
+            var f = new FilterCompiler<T>();
             var c = new Tokenizer(text);
             var syntax = SyntaxHighlight(c.Parse(true)).ToArray();
             var q = syntax.Reverse()
@@ -1330,7 +1329,7 @@ namespace Tetraptera.Models
                 var last = syntax.LastOrDefault();
                 if (last != null && last.Type == SyntaxType.String) return new List<string>();
                 // Symbolが含まれないときはStatusのプロパティ
-                return typeof(Status).GetRuntimeProperties()
+                return typeof(T).GetRuntimeProperties()
                     .Select(p => p.Name)
                     .Concat(new[] { UserFunctionNamespace })
                     .Select(s => s.ToLowerInvariant())
@@ -1348,7 +1347,7 @@ namespace Tetraptera.Models
             // 絞り込み文字列
             prefix = lookup ? "" : q[0].Value;
             // 型情報を検索
-            var targetType = string.IsNullOrEmpty(symbol) ? typeof(Status) : f.GetSymbolType(new CompilerToken
+            var targetType = string.IsNullOrEmpty(symbol) ? typeof(T) : f.GetSymbolType(new CompilerToken
                 {
                     Length = symbol.Length,
                     Position = 0,
@@ -1361,7 +1360,7 @@ namespace Tetraptera.Models
             var pp = prefix;
             return targetType.GetRuntimeProperties()
                 .Select(p => p.Name)
-                .Concat(targetType == typeof(Status) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
+                .Concat(targetType == typeof(T) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
                 .Concat(targetType == typeof(UserFunctionTypePlaceholder) ? Functions.Keys : Enumerable.Empty<string>())
                 .Select(s => s.ToLowerInvariant())
                 .Where(n => n.StartsWith(pp))
