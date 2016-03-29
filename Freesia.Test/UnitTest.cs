@@ -1,4 +1,5 @@
-﻿using Freesia;
+﻿using System.Linq;
+using Freesia;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FreesiaTest
@@ -8,11 +9,23 @@ namespace FreesiaTest
         public string text { get; set; }
         public ulong id { get; set; }
         public bool favorited { get; set; }
+        public bool? B { get; set; }
     }
 
     [TestClass]
     public class UnitTest
     {
+        private static string AllOpsScript =
+            "text == 'a' && (text ==i 'a' || (text =@ 'a' && text =@i 'a')) || text =~ 'a' || text != 'a' || text !=i 'a' || text !=@ 'a' || text !=@i 'a' ||" +
+            "text !~ 'a' && (id == 0 || id != 0 || id < 0 || id > 0 || id <= 0 || id >= 0) && favorited || !favorited && (favorited || favorited && false)";
+
+        [ClassInitialize]
+        public static void Setup(TestContext c)
+        {
+            FilterCompiler<TestClass>.UserFunctionNamespace = "user";
+            FilterCompiler<TestClass>.Functions.Add("func", _ => true);
+        }
+
         [TestMethod]
         public void CompileTest()
         {
@@ -288,15 +301,54 @@ namespace FreesiaTest
         [TestMethod]
         public void AllOps()
         {
-            FilterCompiler<TestClass>.Compile(
-                "text == 'a' && (text ==i 'a' || (text =@ 'a' && text =@i 'a')) || text =~ 'a' || text != 'a' || text !=i 'a' || text !=@ 'a' || text !=@i 'a' ||" +
-                "text !~ 'a' && (id == 0 || id != 0 || id < 0 || id > 0 || id <= 0 || id >= 0) && favorited || !favorited && (favorited || favorited && false)");
+            FilterCompiler<TestClass>.Compile(AllOpsScript);
+        }
+
+        [TestMethod]
+        public void SyntaxHighlight()
+        {
+            var syntax = FilterCompiler<TestClass>.Parse(AllOpsScript);
+            FilterCompiler<TestClass>.SyntaxHighlight(syntax);
+            FilterCompiler<TestClass>.ParseForSyntaxHightlight(AllOpsScript);
+            FilterCompiler<TestClass>.ParseForSyntaxHightlight("true false user 1 2 3 'a' == !a || b[1] || {true, false, null} text user.func text.length");
+        }
+
+        [TestMethod]
+        public void UnaryOperator()
+        {
+            Assert.IsFalse(FilterCompiler<TestClass>.Compile("!{true}").Invoke(new TestClass()));
+            Assert.IsFalse(FilterCompiler<TestClass>.Compile("!{true, true}").Invoke(new TestClass()));
+            Assert.IsFalse(FilterCompiler<TestClass>.Compile("!{B}").Invoke(new TestClass { B = true }));
+        }
+
+        [TestMethod]
+        public void Completion()
+        {
+            string s;
+            var completion = FilterCompiler<TestClass>.Completion("text == 'a' || te", out s);
+            Assert.AreEqual(completion.First(), "text");
+            Assert.AreEqual(s, "te");
+            Assert.AreEqual(FilterCompiler<TestClass>.Completion("", out s).Count(), 5);
+        }
+
+        [TestMethod]
+        public void ParserException()
+        {
+            try
+            {
+                FilterCompiler<TestClass>.Compile("texta");
+            }
+            catch (ParseException)
+            {
+                return;
+            }
+            Assert.Fail("Expected ParseException.");
         }
 
         [TestMethod]
         public void StressTest()
         {
-            int Iteration = 500, c = 0;
+            int Iteration = 50, c = 0;
             for (var i = 0; i < Iteration; ++i)
             {
                 FilterCompiler<TestClass>.Compile(
