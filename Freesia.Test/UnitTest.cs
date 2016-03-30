@@ -10,6 +10,7 @@ namespace FreesiaTest
         public ulong id { get; set; }
         public bool favorited { get; set; }
         public bool? B { get; set; }
+        public string[] Ints { get; set; }
     }
 
     [TestClass]
@@ -328,7 +329,7 @@ namespace FreesiaTest
             var completion = FilterCompiler<TestClass>.Completion("text == 'a' || te", out s);
             Assert.AreEqual(completion.First(), "text");
             Assert.AreEqual(s, "te");
-            Assert.AreEqual(FilterCompiler<TestClass>.Completion("", out s).Count(), 5);
+            Assert.AreEqual(FilterCompiler<TestClass>.Completion("", out s).Count(), 6);
         }
 
         [TestMethod]
@@ -343,6 +344,13 @@ namespace FreesiaTest
                 return;
             }
             Assert.Fail("Expected ParseException.");
+        }
+
+        [TestMethod]
+        public void IndexerTest()
+        {
+            var a = new TestClass {Ints = new[] {"1"}};
+            Assert.IsTrue(FilterCompiler<TestClass>.Compile("Ints[0].Length == 1")(a));
         }
 
         [TestMethod]
