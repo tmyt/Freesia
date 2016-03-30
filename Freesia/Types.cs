@@ -90,6 +90,9 @@ namespace Freesia.Types
         Nop,
         ArrayNode,
         Lambda,
+        IndexerStart,
+        IndexerEnd,
+        IndexerNode,
         PropertyAccess
     }
 

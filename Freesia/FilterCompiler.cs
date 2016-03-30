@@ -55,6 +55,10 @@ namespace Freesia
                 }
                 return items.ToArray();
             }
+            if (ast.Token.Type == TokenType.IndexerNode)
+            {
+                return MakeIndexerExpression(ast.Left, ast.Right);
+            }
             if (!ast.Token.IsOperand())
             {
                 return ast.Token;
@@ -370,6 +374,22 @@ namespace Freesia
             throw new ParseException("case insensitive option can only use to Property or String.", -1);
         }
 
+        private Expression MakeIndexerExpression(ASTNode prop, ASTNode indexer)
+        {
+            var property = MakeExpression(prop.Token);
+            var i = GetConstantValue(indexer.Token);
+            if (i is Double) throw new ParseException("Indexer should be int value.", indexer.Token.Position);
+            if (property.Type.IsArray)
+            {
+                return Expression.ArrayIndex(property, Expression.Constant(Convert.ToInt32(i)));
+            }
+            var propInfo = property.Type.GetRuntimeProperty("Item");
+            if (propInfo == null)
+                throw new ParseException(String.Format("Property '{0}' is not indexed type.", prop.Token.Value), -1);
+            var e = Expression.Constant(Convert.ToInt32(i));
+            return Expression.MakeIndex(property, propInfo, new[] { e });
+        }
+
         private Expression MakeMemberAccessExpression(Expression lhs, CompilerToken rhs)
         {
             var valueExpr = MakeNullableAccessExpression(lhs);
@@ -600,7 +620,6 @@ namespace Freesia
             var properties = (IsNullable(t) ? t.Value + ".Value" : t.Value).Split('.');
             foreach (var prop in properties)
             {
-                var index = Int32.MaxValue;
                 var propname = prop;
                 if (targetType == typeof(UserFunctionTypePlaceholder))
                 {
@@ -617,33 +636,11 @@ namespace Freesia
                     targetType = typeof(UserFunctionTypePlaceholder);
                     continue;
                 }
-                if (propname.EndsWith("]"))
-                {
-                    var arrayProp = Propname(propname);
-                    propname = arrayProp.PropName;
-                    index = arrayProp.Index;
-                }
                 var propInfo = GetPreferredPropertyType(targetType, propname);
                 if (propInfo == null)
                     throw new ParseException(String.Format("Property '{0}' is not found.", t.Value), -1);
                 targetExpression = Expression.MakeMemberAccess(targetExpression, propInfo);
                 targetType = propInfo.PropertyType;
-                if (index != Int32.MaxValue)
-                {
-                    if (targetType.IsArray)
-                    {
-                        targetExpression = Expression.ArrayIndex(targetExpression, Expression.Constant(index));
-                        targetType = targetType.GetElementType();
-                    }
-                    else
-                    {
-                        propInfo = targetType.GetRuntimeProperty("Item");
-                        if (propInfo == null) throw new ParseException(String.Format("Property '{0}' is not indexed type.", t.Value), -1);
-                        var e = Expression.Constant(index);
-                        targetExpression = Expression.MakeIndex(targetExpression, propInfo, new[] { e });
-                        targetType = propInfo.PropertyType;
-                    }
-                }
             }
             return targetExpression;
         }
@@ -877,6 +874,8 @@ namespace Freesia
                     case TokenType.ArrayStart:
                     case TokenType.ArrayEnd:
                     case TokenType.ArrayDelimiter:
+                    case TokenType.IndexerStart:
+                    case TokenType.IndexerEnd:
                     case TokenType.Lambda:
                         yield return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Operator, Value = t.Value };
                         break;

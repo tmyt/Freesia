@@ -37,7 +37,7 @@ namespace Freesia.Internal
                 // enter Array parsing
                 if (token.Type == TokenType.ArrayStart) inArray = true;
                 // correct token
-                if (token.IsSymbol() || token.Type == TokenType.ArrayStart)
+                if (token.IsSymbol() || token.Type == TokenType.ArrayStart || token.Type == TokenType.IndexerStart)
                 {
                     values.Push(new ASTNode(token));
                     continue;
@@ -67,6 +67,26 @@ namespace Freesia.Internal
                     }
                     values.Pop();
                     values.Push(arrayNode);
+                    continue;
+                }
+                // generate AST for Indexer
+                if (token.Type == TokenType.IndexerEnd)
+                {
+                    var node = values.Peek();
+                    var indexerNode = new ASTNode();
+                    var valueTaken = false;
+                    while (node.Token.Type != TokenType.IndexerStart)
+                    {
+                        if (valueTaken) throw new ParseException("Indexer should be one token.", node.Token.Position);
+                        valueTaken = true;
+                        indexerNode.Right = node;
+                        values.Pop();
+                        node = values.Peek();
+                    }
+                    indexerNode.Token = new CompilerToken { Type = TokenType.IndexerNode, Value = "[]", Length = 2, Position = node.Token.Position };
+                    values.Pop();
+                    indexerNode.Left = values.Pop();
+                    values.Push(indexerNode);
                     continue;
                 }
                 // found ')'

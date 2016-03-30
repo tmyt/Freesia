@@ -140,6 +140,12 @@ namespace Freesia.Internal
                     case '}':
                         yield return new CompilerToken { Type = TokenType.ArrayEnd, Position = start, Length = 1 };
                         break;
+                    case '[':
+                        yield return new CompilerToken { Type = TokenType.IndexerStart, Position = start, Length = 1 };
+                        break;
+                    case ']':
+                        yield return new CompilerToken { Type = TokenType.IndexerEnd, Position = start, Length = 1 };
+                        break;
                     case ',':
                         yield return new CompilerToken { Type = TokenType.ArrayDelimiter, Position = start, Length = 1 };
                         break;
@@ -245,12 +251,12 @@ namespace Freesia.Internal
                         switch (DeterminTokenType(str))
                         {
                             case TokenType.Symbol:
-                                str += TakeWhile('(', ')', '{', '}', ',', '.', '=', '!', '&', '|', '"', '\'', '>', '<', ' ', '\t', '\r', '\n');
+                                str += TakeWhile('(', ')', '{', '}', '[', ']', ',', '.', '=', '!', '&', '|', '"', '\'', '>', '<', ' ', '\t', '\r', '\n');
                                 break;
                             case TokenType.Double:
                             case TokenType.Long:
                             case TokenType.ULong:
-                                str += TakeWhile('(', ')', '{', '}', ',', '=', '!', '&', '|', '"', '\'', '>', '<', ' ', '\t', '\r', '\n');
+                                str += TakeWhile('(', ')', '{', '}', '[', ']', ',', '=', '!', '&', '|', '"', '\'', '>', '<', ' ', '\t', '\r', '\n');
                                 break;
                         }
                         if (!String.IsNullOrEmpty(str))
