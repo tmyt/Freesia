@@ -17,17 +17,10 @@ namespace Freesia.Internal.Types
 
         internal string Dump()
         {
-            return $"{Left?.Dump()} {Token} {Right?.Dump()}";
+            return $"({Left?.Dump()} {Token} {Right?.Dump()})";
         }
     }
-
-    internal class ArrayProperty
-    {
-        public string PropName { get; set; }
-        public string ArrayAccessor { get; set; }
-        public int Index { get; set; }
-    }
-
+    
     internal enum Associativity
     {
         LeftToRight,
@@ -61,25 +54,25 @@ namespace Freesia.Internal.Types
 
         public static Dictionary<TokenType, Associativity> Associativity = new Dictionary<TokenType, Associativity>
         {
-            {TokenType.PropertyAccess, Internal.Types.Associativity.LeftToRight },
-            {TokenType.Not, Internal.Types.Associativity.RightToLeft},
-            {TokenType.LessThan, Internal.Types.Associativity.LeftToRight},
-            {TokenType.GreaterThan, Internal.Types.Associativity.LeftToRight},
-            {TokenType.LessThanEquals, Internal.Types.Associativity.LeftToRight},
-            {TokenType.GreaterThanEquals, Internal.Types.Associativity.LeftToRight},
-            {TokenType.Equals, Internal.Types.Associativity.LeftToRight},
-            {TokenType.EqualsI, Internal.Types.Associativity.LeftToRight},
-            {TokenType.NotEquals, Internal.Types.Associativity.LeftToRight},
-            {TokenType.NotEqualsI, Internal.Types.Associativity.LeftToRight},
-            {TokenType.Regexp, Internal.Types.Associativity.LeftToRight},
-            {TokenType.NotRegexp, Internal.Types.Associativity.LeftToRight},
-            {TokenType.Contains, Internal.Types.Associativity.LeftToRight},
-            {TokenType.ContainsI, Internal.Types.Associativity.LeftToRight},
-            {TokenType.NotContains, Internal.Types.Associativity.LeftToRight},
-            {TokenType.NotContainsI, Internal.Types.Associativity.LeftToRight},
-            {TokenType.And, Internal.Types.Associativity.LeftToRight},
-            {TokenType.Or, Internal.Types.Associativity.LeftToRight},
-            {TokenType.Lambda, Internal.Types.Associativity.RightToLeft }
+            {TokenType.PropertyAccess, Types.Associativity.LeftToRight },
+            {TokenType.Not, Types.Associativity.RightToLeft},
+            {TokenType.LessThan, Types.Associativity.LeftToRight},
+            {TokenType.GreaterThan, Types.Associativity.LeftToRight},
+            {TokenType.LessThanEquals, Types.Associativity.LeftToRight},
+            {TokenType.GreaterThanEquals, Types.Associativity.LeftToRight},
+            {TokenType.Equals, Types.Associativity.LeftToRight},
+            {TokenType.EqualsI, Types.Associativity.LeftToRight},
+            {TokenType.NotEquals, Types.Associativity.LeftToRight},
+            {TokenType.NotEqualsI, Types.Associativity.LeftToRight},
+            {TokenType.Regexp, Types.Associativity.LeftToRight},
+            {TokenType.NotRegexp, Types.Associativity.LeftToRight},
+            {TokenType.Contains, Types.Associativity.LeftToRight},
+            {TokenType.ContainsI, Types.Associativity.LeftToRight},
+            {TokenType.NotContains, Types.Associativity.LeftToRight},
+            {TokenType.NotContainsI, Types.Associativity.LeftToRight},
+            {TokenType.And, Types.Associativity.LeftToRight},
+            {TokenType.Or, Types.Associativity.LeftToRight},
+            {TokenType.Lambda, Types.Associativity.RightToLeft }
         };
     }
 

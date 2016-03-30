@@ -636,38 +636,16 @@ namespace Freesia
             var targetType = statusType;
             foreach (var prop in properties)
             {
-                var index = Int32.MaxValue;
                 var propname = prop;
-                if (targetType == typeof(UserFunctionTypePlaceholder))
-                {
-                    if (Functions.ContainsKey(prop.ToLowerInvariant())) return typeof(bool);
-                    throw new ParseException(String.Format("Property '{0}' is not found.", t.Value), -1);
-                }
                 if (propname == UserFunctionNamespace && properties.First() == prop)
                 {
                     targetType = typeof(UserFunctionTypePlaceholder);
                     continue;
                 }
-                if (propname.EndsWith("]"))
-                {
-                    var arrayProp = Propname(propname);
-                    propname = arrayProp.PropName;
-                    index = arrayProp.Index;
-                }
                 var propInfo = GetPreferredPropertyType(targetType, propname);
                 if (propInfo == null)
                     throw new ParseException(String.Format("Property '{0}' is not found.", t.Value), -1);
                 targetType = propInfo.PropertyType;
-                if (index != Int32.MaxValue)
-                {
-                    if (targetType.IsArray) targetType = targetType.GetElementType();
-                    else
-                    {
-                        var tmpProp = targetType.GetRuntimeProperty("Item");
-                        if (tmpProp == null) throw new ParseException(String.Format("Property '{0}' is not indexed type.", t.Value), -1);
-                        targetType = tmpProp.PropertyType;
-                    }
-                }
             }
             return targetType;
         }
@@ -686,26 +664,8 @@ namespace Freesia
             var pos = t.Position;
             foreach (var prop in properties)
             {
-                var index = Int32.MaxValue;
                 var propname = prop;
-                var arrayAccessor = "";
-                if (targetType == typeof(UserFunctionTypePlaceholder))
-                {
-                    var type = Functions.ContainsKey(propname.ToLowerInvariant())
-                        ? SyntaxType.Identifier
-                        : SyntaxType.Error;
-                    yield return new SyntaxInfo
-                    {
-                        Position = pos,
-                        Length = propname.Length,
-                        SubType = TokenType.Symbol,
-                        Type = type,
-                        Value = propname
-                    };
-                    targetType = typeof(bool);
-                    pos += propname.Length;
-                }
-                else if (propname.ToLowerInvariant() == UserFunctionNamespace && properties.First() == prop)
+                if (propname.ToLowerInvariant() == UserFunctionNamespace && properties.First() == prop)
                 {
                     yield return new SyntaxInfo
                     {
@@ -720,13 +680,6 @@ namespace Freesia
                 }
                 else
                 {
-                    if (propname.EndsWith("]"))
-                    {
-                        var arrayProp = Propname(propname);
-                        propname = arrayProp.PropName;
-                        index = arrayProp.Index;
-                        arrayAccessor = arrayProp.ArrayAccessor;
-                    }
                     var propInfo = GetPreferredPropertyType(targetType, propname);
                     if (propInfo == null)
                     {
@@ -752,70 +705,9 @@ namespace Freesia
                         };
                     targetType = propInfo.PropertyType;
                     pos += propname.Length;
-                    if (index != Int32.MaxValue)
-                    {
-                        if (targetType.IsArray) targetType = targetType.GetElementType();
-                        else
-                        {
-                            var tmpProp = targetType.GetRuntimeProperty("Item");
-                            if (tmpProp == null)
-                            {
-                                yield return
-                                    new SyntaxInfo
-                                    {
-                                        Position = pos,
-                                        Length = t.Length - (pos - t.Position),
-                                        SubType = TokenType.Symbol,
-                                        Type = SyntaxType.Error,
-                                        Value = t.Value.Substring(pos)
-                                    };
-                                yield break;
-                            }
-                            targetType = tmpProp.PropertyType;
-                        }
-                        yield return new SyntaxInfo
-                        {
-                            Position = pos,
-                            Length = arrayAccessor.Length,
-                            SubType = TokenType.Symbol,
-                            Type = SyntaxType.ArrayArgs,
-                            Value = arrayAccessor
-                        };
-                        pos += arrayAccessor.Length;
-                    }
-                }
-                if (properties.Last() != prop)
-                {
-                    yield return new SyntaxInfo
-                    {
-                        Position = pos,
-                        Length = 1,
-                        SubType = TokenType.Symbol,
-                        Type = SyntaxType.Constant,
-                        Value = "."
-                    };
                 }
                 pos += 1;
             }
-        }
-
-        private static ArrayProperty Propname(string propname)
-        {
-            var ret = new ArrayProperty();
-            var arrayAccessor = default(string);
-            var index = 0;
-            var p = propname.IndexOf("[", StringComparison.Ordinal);
-            if (p >= 0)
-            {
-                var i = propname.Substring(p + 1, propname.Length - p - 2);
-                arrayAccessor = propname.Substring(p, propname.Length - p);
-                if (!Int32.TryParse(i, out index)) index = Int32.MaxValue;
-                else propname = propname.Substring(0, p);
-            }
-            ret.PropName = propname;
-            ret.ArrayAccessor = arrayAccessor;
-            ret.Index = index;
-            return ret;
         }
 
         public static IEnumerable<CompilerToken> Parse(string text)
