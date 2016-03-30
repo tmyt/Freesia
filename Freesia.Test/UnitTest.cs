@@ -327,6 +327,7 @@ namespace FreesiaTest
             var syntax = FilterCompiler<TestClass>.Parse(AllOpsScript);
             FilterCompiler<TestClass>.SyntaxHighlight(syntax);
             FilterCompiler<TestClass>.ParseForSyntaxHightlight(AllOpsScript);
+            FilterCompiler<TestClass>.ParseForSyntaxHightlight("user.func == true");
             var info = FilterCompiler<TestClass>.ParseForSyntaxHightlight("true false user 1 2 3 'a' == !a || b[1] || {true, false, null} text user.func text.length").ToArray();
             info.ToString();
         }
@@ -343,6 +344,13 @@ namespace FreesiaTest
         public void Completion()
         {
             string s;
+            FilterCompiler<TestClass>.Completion("'", out s);
+            FilterCompiler<TestClass>.Completion("\"", out s);
+            FilterCompiler<TestClass>.Completion("'a", out s);
+            FilterCompiler<TestClass>.Completion("a", out s);
+            FilterCompiler<TestClass>.Completion("text.l", out s);
+            FilterCompiler<TestClass>.Completion("user.", out s);
+            FilterCompiler<TestClass>.Completion("user.f", out s);
             var completion = FilterCompiler<TestClass>.Completion("text == 'a' || tex", out s);
             Assert.AreEqual(completion.First(), "text");
             Assert.AreEqual(s, "tex");
@@ -397,7 +405,24 @@ namespace FreesiaTest
         {
             var a = new TestClass { text = "a", TestClass2 = new TestClass2 { S = "b" } };
             Assert.IsTrue(RunTest("text ==i 'A'", a));
+            Assert.IsTrue(RunTest("'A' ==i text", a));
             Assert.IsTrue(RunTest("testclass2.s ==i 'B'", a));
+            Assert.IsTrue(RunTest("'B' ==i testclass2.s", a));
+        }
+
+        [TestMethod]
+        public void LambdaTest()
+        {
+            FilterCompiler<TestClass>.Parse("a => a == 1");
+            try
+            {
+                FilterCompiler<TestClass>.Compile("a => a == 1");
+            }
+            catch (ParseException)
+            {
+                return;
+            }
+            Assert.Fail();
         }
 
         [TestMethod]
