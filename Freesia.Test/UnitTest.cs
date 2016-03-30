@@ -26,6 +26,16 @@ namespace FreesiaTest
             "text == 'a' && (text ==i 'a' || (text =@ 'a' && text =@i 'a')) || text =~ 'a' || text != 'a' || text !=i 'a' || text !=@ 'a' || text !=@i 'a' ||" +
             "text !~ 'a' && (id == 0 || id != 0 || id < 0 || id > 0 || id <= 0 || id >= 0) && favorited || !favorited && (favorited || favorited && false)";
 
+        private bool RunTest(string script, TestClass obj)
+        {
+            return FilterCompiler<TestClass>.Compile(script)(obj);
+        }
+
+        private bool RunTest(string script)
+        {
+            return FilterCompiler<TestClass>.Compile(script)(new TestClass());
+        }
+
         [ClassInitialize]
         public static void Setup(TestContext c)
         {
@@ -37,278 +47,278 @@ namespace FreesiaTest
         public void CompileTest()
         {
             // single value
-            FilterCompiler<TestClass>.Compile("text ==   'hoge'");
-            FilterCompiler<TestClass>.Compile("text ==i  'hoge'");
-            FilterCompiler<TestClass>.Compile("text =@   'hoge'");
-            FilterCompiler<TestClass>.Compile("text =@i  'hoge'");
-            FilterCompiler<TestClass>.Compile("text =~   'hoge'");
-            FilterCompiler<TestClass>.Compile("text !=   'hoge'");
-            FilterCompiler<TestClass>.Compile("text !=i  'hoge'");
-            FilterCompiler<TestClass>.Compile("text !~   'hoge'");
-            FilterCompiler<TestClass>.Compile("text !=@  'hoge'");
-            FilterCompiler<TestClass>.Compile("text !=@i 'hoge'");
+            RunTest("text ==   'hoge'");
+            RunTest("text ==i  'hoge'");
+            RunTest("text =@   'hoge'");
+            RunTest("text =@i  'hoge'");
+            RunTest("text =~   'hoge'");
+            RunTest("text !=   'hoge'");
+            RunTest("text !=i  'hoge'");
+            RunTest("text !~   'hoge'");
+            RunTest("text !=@  'hoge'");
+            RunTest("text !=@i 'hoge'");
 
-            FilterCompiler<TestClass>.Compile("'hoge' ==   text");
-            FilterCompiler<TestClass>.Compile("'hoge' ==i  text");
-            FilterCompiler<TestClass>.Compile("'hoge' =@   text");
-            FilterCompiler<TestClass>.Compile("'hoge' =@i  text");
-            FilterCompiler<TestClass>.Compile("'hoge' =~   text");
-            FilterCompiler<TestClass>.Compile("'hoge' !=   text");
-            FilterCompiler<TestClass>.Compile("'hoge' !=i  text");
-            FilterCompiler<TestClass>.Compile("'hoge' =~   text");
-            FilterCompiler<TestClass>.Compile("'hoge' !=@  text");
-            FilterCompiler<TestClass>.Compile("'hoge' !=@i text");
+            RunTest("'hoge' ==   text");
+            RunTest("'hoge' ==i  text");
+            RunTest("'hoge' =@   text");
+            RunTest("'hoge' =@i  text");
+            RunTest("'hoge' =~   text");
+            RunTest("'hoge' !=   text");
+            RunTest("'hoge' !=i  text");
+            RunTest("'hoge' =~   text");
+            RunTest("'hoge' !=@  text");
+            RunTest("'hoge' !=@i text");
 
-            FilterCompiler<TestClass>.Compile("'hoge' ==   'hoge'");
-            FilterCompiler<TestClass>.Compile("'hoge' ==i  'hoge'");
-            FilterCompiler<TestClass>.Compile("'hoge' =@   'hoge'");
-            FilterCompiler<TestClass>.Compile("'hoge' =@i  'hoge'");
-            FilterCompiler<TestClass>.Compile("'hoge' =~   'hoge'");
-            FilterCompiler<TestClass>.Compile("'hoge' !=   'hoge'");
-            FilterCompiler<TestClass>.Compile("'hoge' !=i  'hoge'");
-            FilterCompiler<TestClass>.Compile("'hoge' !~   'hoge'");
-            FilterCompiler<TestClass>.Compile("'hoge' !=@  'hoge'");
-            FilterCompiler<TestClass>.Compile("'hoge' !=@i 'hoge'");
+            RunTest("'hoge' ==   'hoge'");
+            RunTest("'hoge' ==i  'hoge'");
+            RunTest("'hoge' =@   'hoge'");
+            RunTest("'hoge' =@i  'hoge'");
+            RunTest("'hoge' =~   'hoge'");
+            RunTest("'hoge' !=   'hoge'");
+            RunTest("'hoge' !=i  'hoge'");
+            RunTest("'hoge' !~   'hoge'");
+            RunTest("'hoge' !=@  'hoge'");
+            RunTest("'hoge' !=@i 'hoge'");
 
-            FilterCompiler<TestClass>.Compile("favorited == true");
-            FilterCompiler<TestClass>.Compile("favorited != true");
-            FilterCompiler<TestClass>.Compile("favorited && true");
-            FilterCompiler<TestClass>.Compile("favorited || true");
-            FilterCompiler<TestClass>.Compile("true == favorited");
-            FilterCompiler<TestClass>.Compile("true != favorited");
-            FilterCompiler<TestClass>.Compile("true && favorited");
-            FilterCompiler<TestClass>.Compile("true || favorited");
-            FilterCompiler<TestClass>.Compile("true == true");
-            FilterCompiler<TestClass>.Compile("true != true");
-            FilterCompiler<TestClass>.Compile("true && true");
-            FilterCompiler<TestClass>.Compile("true || true");
+            RunTest("favorited == true");
+            RunTest("favorited != true");
+            RunTest("favorited && true");
+            RunTest("favorited || true");
+            RunTest("true == favorited");
+            RunTest("true != favorited");
+            RunTest("true && favorited");
+            RunTest("true || favorited");
+            RunTest("true == true");
+            RunTest("true != true");
+            RunTest("true && true");
+            RunTest("true || true");
 
-            FilterCompiler<TestClass>.Compile("id == 0");
-            FilterCompiler<TestClass>.Compile("id != 0");
-            FilterCompiler<TestClass>.Compile("id >  0");
-            FilterCompiler<TestClass>.Compile("id <  0");
-            FilterCompiler<TestClass>.Compile("id >= 0");
-            FilterCompiler<TestClass>.Compile("id <= 0");
-            FilterCompiler<TestClass>.Compile("0 == id");
-            FilterCompiler<TestClass>.Compile("0 != id");
-            FilterCompiler<TestClass>.Compile("0 >  id");
-            FilterCompiler<TestClass>.Compile("0 <  id");
-            FilterCompiler<TestClass>.Compile("0 >= id");
-            FilterCompiler<TestClass>.Compile("0 <= id");
-            FilterCompiler<TestClass>.Compile("0 == 0");
-            FilterCompiler<TestClass>.Compile("0 != 0");
-            FilterCompiler<TestClass>.Compile("0 >  0");
-            FilterCompiler<TestClass>.Compile("0 <  0");
-            FilterCompiler<TestClass>.Compile("0 >= 0");
-            FilterCompiler<TestClass>.Compile("0 <= 0");
+            RunTest("id == 0");
+            RunTest("id != 0");
+            RunTest("id >  0");
+            RunTest("id <  0");
+            RunTest("id >= 0");
+            RunTest("id <= 0");
+            RunTest("0 == id");
+            RunTest("0 != id");
+            RunTest("0 >  id");
+            RunTest("0 <  id");
+            RunTest("0 >= id");
+            RunTest("0 <= id");
+            RunTest("0 == 0");
+            RunTest("0 != 0");
+            RunTest("0 >  0");
+            RunTest("0 <  0");
+            RunTest("0 >= 0");
+            RunTest("0 <= 0");
 
             // array value
-            FilterCompiler<TestClass>.Compile("text ==   {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("text ==i  {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("text =@   {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("text =@i  {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("text =~   {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("text !=   {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("text !=i  {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("text !~   {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("text !=@  {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("text !=@i {'hoge', 'fuga', 'piyo'}");
+            RunTest("text ==   {'hoge', 'fuga', 'piyo'}");
+            RunTest("text ==i  {'hoge', 'fuga', 'piyo'}");
+            RunTest("text =@   {'hoge', 'fuga', 'piyo'}");
+            RunTest("text =@i  {'hoge', 'fuga', 'piyo'}");
+            RunTest("text =~   {'hoge', 'fuga', 'piyo'}");
+            RunTest("text !=   {'hoge', 'fuga', 'piyo'}");
+            RunTest("text !=i  {'hoge', 'fuga', 'piyo'}");
+            RunTest("text !~   {'hoge', 'fuga', 'piyo'}");
+            RunTest("text !=@  {'hoge', 'fuga', 'piyo'}");
+            RunTest("text !=@i {'hoge', 'fuga', 'piyo'}");
 
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} ==   text");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} ==i  text");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} =@   text");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} =@i  text");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} =~   text");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=   text");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=i  text");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} =~   text");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=@  text");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=@i text");
+            RunTest("{'hoge', 'fuga', 'piyo'} ==   text");
+            RunTest("{'hoge', 'fuga', 'piyo'} ==i  text");
+            RunTest("{'hoge', 'fuga', 'piyo'} =@   text");
+            RunTest("{'hoge', 'fuga', 'piyo'} =@i  text");
+            RunTest("{'hoge', 'fuga', 'piyo'} =~   text");
+            RunTest("{'hoge', 'fuga', 'piyo'} !=   text");
+            RunTest("{'hoge', 'fuga', 'piyo'} !=i  text");
+            RunTest("{'hoge', 'fuga', 'piyo'} =~   text");
+            RunTest("{'hoge', 'fuga', 'piyo'} !=@  text");
+            RunTest("{'hoge', 'fuga', 'piyo'} !=@i text");
 
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} ==   {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} ==i  {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} =@   {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} =@i  {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} =~   {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=   {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=i  {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !~   {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=@  {'hoge', 'fuga', 'piyo'}");
-            FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=@i {'hoge', 'fuga', 'piyo'}");
+            RunTest("{'hoge', 'fuga', 'piyo'} ==   {'hoge', 'fuga', 'piyo'}");
+            RunTest("{'hoge', 'fuga', 'piyo'} ==i  {'hoge', 'fuga', 'piyo'}");
+            RunTest("{'hoge', 'fuga', 'piyo'} =@   {'hoge', 'fuga', 'piyo'}");
+            RunTest("{'hoge', 'fuga', 'piyo'} =@i  {'hoge', 'fuga', 'piyo'}");
+            RunTest("{'hoge', 'fuga', 'piyo'} =~   {'hoge', 'fuga', 'piyo'}");
+            RunTest("{'hoge', 'fuga', 'piyo'} !=   {'hoge', 'fuga', 'piyo'}");
+            RunTest("{'hoge', 'fuga', 'piyo'} !=i  {'hoge', 'fuga', 'piyo'}");
+            RunTest("{'hoge', 'fuga', 'piyo'} !~   {'hoge', 'fuga', 'piyo'}");
+            RunTest("{'hoge', 'fuga', 'piyo'} !=@  {'hoge', 'fuga', 'piyo'}");
+            RunTest("{'hoge', 'fuga', 'piyo'} !=@i {'hoge', 'fuga', 'piyo'}");
 
-            FilterCompiler<TestClass>.Compile("favorited == {true, false}");
-            FilterCompiler<TestClass>.Compile("favorited != {true, false}");
-            FilterCompiler<TestClass>.Compile("favorited && {true, false}");
-            FilterCompiler<TestClass>.Compile("favorited || {true, false}");
-            FilterCompiler<TestClass>.Compile("{true, false} == favorited");
-            FilterCompiler<TestClass>.Compile("{true, false} != favorited");
-            FilterCompiler<TestClass>.Compile("{true, false} && favorited");
-            FilterCompiler<TestClass>.Compile("{true, false} || favorited");
-            FilterCompiler<TestClass>.Compile("{true, false} == {true, false}");
-            FilterCompiler<TestClass>.Compile("{true, false} != {true, false}");
-            FilterCompiler<TestClass>.Compile("{true, false} && {true, false}");
-            FilterCompiler<TestClass>.Compile("{true, false} || {true, false}");
+            RunTest("favorited == {true, false}");
+            RunTest("favorited != {true, false}");
+            RunTest("favorited && {true, false}");
+            RunTest("favorited || {true, false}");
+            RunTest("{true, false} == favorited");
+            RunTest("{true, false} != favorited");
+            RunTest("{true, false} && favorited");
+            RunTest("{true, false} || favorited");
+            RunTest("{true, false} == {true, false}");
+            RunTest("{true, false} != {true, false}");
+            RunTest("{true, false} && {true, false}");
+            RunTest("{true, false} || {true, false}");
 
-            FilterCompiler<TestClass>.Compile("id == {0, 1}");
-            FilterCompiler<TestClass>.Compile("id != {0, 1}");
-            FilterCompiler<TestClass>.Compile("id >  {0, 1}");
-            FilterCompiler<TestClass>.Compile("id <  {0, 1}");
-            FilterCompiler<TestClass>.Compile("id >= {0, 1}");
-            FilterCompiler<TestClass>.Compile("id <= {0, 1}");
-            FilterCompiler<TestClass>.Compile("{0, 1} == id");
-            FilterCompiler<TestClass>.Compile("{0, 1} != id");
-            FilterCompiler<TestClass>.Compile("{0, 1} >  id");
-            FilterCompiler<TestClass>.Compile("{0, 1} <  id");
-            FilterCompiler<TestClass>.Compile("{0, 1} >= id");
-            FilterCompiler<TestClass>.Compile("{0, 1} <= id");
-            FilterCompiler<TestClass>.Compile("{0, 1} == {0, 1}");
-            FilterCompiler<TestClass>.Compile("{0, 1} != {0, 1}");
-            FilterCompiler<TestClass>.Compile("{0, 1} >  {0, 1}");
-            FilterCompiler<TestClass>.Compile("{0, 1} <  {0, 1}");
-            FilterCompiler<TestClass>.Compile("{0, 1} >= {0, 1}");
-            FilterCompiler<TestClass>.Compile("{0, 1} <= {0, 1}");
+            RunTest("id == {0, 1}");
+            RunTest("id != {0, 1}");
+            RunTest("id >  {0, 1}");
+            RunTest("id <  {0, 1}");
+            RunTest("id >= {0, 1}");
+            RunTest("id <= {0, 1}");
+            RunTest("{0, 1} == id");
+            RunTest("{0, 1} != id");
+            RunTest("{0, 1} >  id");
+            RunTest("{0, 1} <  id");
+            RunTest("{0, 1} >= id");
+            RunTest("{0, 1} <= id");
+            RunTest("{0, 1} == {0, 1}");
+            RunTest("{0, 1} != {0, 1}");
+            RunTest("{0, 1} >  {0, 1}");
+            RunTest("{0, 1} <  {0, 1}");
+            RunTest("{0, 1} >= {0, 1}");
+            RunTest("{0, 1} <= {0, 1}");
         }
 
         [TestMethod]
         public void EvalutionTest()
         {
             var a = new TestClass { favorited = true, id = 1, text = "Hogefuga" };
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("text ==   'hoge'").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("text ==i  'hoge'").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("text =@   'hoge'").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("text =@i  'hoge'").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("text =~   'hoge'").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("text !=   'hoge'").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("text !=i  'hoge'").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("text !~   'hoge'").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("text !=@  'hoge'").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("text !=@i 'hoge'").Invoke(a));
+            Assert.IsTrue(!RunTest("text ==   'hoge'", a));
+            Assert.IsTrue(!RunTest("text ==i  'hoge'", a));
+            Assert.IsTrue(!RunTest("text =@   'hoge'", a));
+            Assert.IsTrue( RunTest("text =@i  'hoge'", a));
+            Assert.IsTrue(!RunTest("text =~   'hoge'", a));
+            Assert.IsTrue( RunTest("text !=   'hoge'", a));
+            Assert.IsTrue( RunTest("text !=i  'hoge'", a));
+            Assert.IsTrue( RunTest("text !~   'hoge'", a));
+            Assert.IsTrue( RunTest("text !=@  'hoge'", a));
+            Assert.IsTrue(!RunTest("text !=@i 'hoge'", a));
 
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("'hoge' ==   text").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("'hoge' ==i  text").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("'hoge' =@   text").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("'hoge' =@i  text").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("'hoge' =~   text").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("'hoge' !=   text").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("'hoge' !=i  text").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("'hoge' !~   text").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("'hoge' !=@  text").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("'hoge' !=@i text").Invoke(a));
+            Assert.IsTrue(!RunTest("'hoge' ==   text", a));
+            Assert.IsTrue(!RunTest("'hoge' ==i  text", a));
+            Assert.IsTrue(!RunTest("'hoge' =@   text", a));
+            Assert.IsTrue(!RunTest("'hoge' =@i  text", a));
+            Assert.IsTrue(!RunTest("'hoge' =~   text", a));
+            Assert.IsTrue( RunTest("'hoge' !=   text", a));
+            Assert.IsTrue( RunTest("'hoge' !=i  text", a));
+            Assert.IsTrue( RunTest("'hoge' !~   text", a));
+            Assert.IsTrue( RunTest("'hoge' !=@  text", a));
+            Assert.IsTrue( RunTest("'hoge' !=@i text", a));
 
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("'hoge' ==   'hoge'").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("'hoge' ==i  'hoge'").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("'hoge' =@   'hoge'").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("'hoge' =@i  'hoge'").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("'hoge' =~   'hoge'").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("'hoge' !=   'hoge'").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("'hoge' !=i  'hoge'").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("'hoge' !~   'hoge'").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("'hoge' !=@  'hoge'").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("'hoge' !=@i 'hoge'").Invoke(a));
+            Assert.IsTrue(RunTest("'hoge' ==   'hoge'", a));
+            Assert.IsTrue(RunTest("'hoge' ==i  'hoge'", a));
+            Assert.IsTrue(RunTest("'hoge' =@   'hoge'", a));
+            Assert.IsTrue(RunTest("'hoge' =@i  'hoge'", a));
+            Assert.IsTrue(RunTest("'hoge' =~   'hoge'", a));
+            Assert.IsTrue(!RunTest("'hoge' !=   'hoge'", a));
+            Assert.IsTrue(!RunTest("'hoge' !=i  'hoge'", a));
+            Assert.IsTrue(!RunTest("'hoge' !~   'hoge'", a));
+            Assert.IsTrue(!RunTest("'hoge' !=@  'hoge'", a));
+            Assert.IsTrue(!RunTest("'hoge' !=@i 'hoge'", a));
 
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("favorited == true").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("favorited != true").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("favorited && true").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("favorited || true").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("true == favorited").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("true != favorited").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("true && favorited").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("true || favorited").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("true == true").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("true != true").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("true && true").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("true || true").Invoke(a));
+            Assert.IsTrue(RunTest("favorited == true", a));
+            Assert.IsTrue(!RunTest("favorited != true", a));
+            Assert.IsTrue(RunTest("favorited && true", a));
+            Assert.IsTrue(RunTest("favorited || true", a));
+            Assert.IsTrue(RunTest("true == favorited", a));
+            Assert.IsTrue(!RunTest("true != favorited", a));
+            Assert.IsTrue(RunTest("true && favorited", a));
+            Assert.IsTrue(RunTest("true || favorited", a));
+            Assert.IsTrue(RunTest("true == true", a));
+            Assert.IsTrue(!RunTest("true != true", a));
+            Assert.IsTrue(RunTest("true && true", a));
+            Assert.IsTrue(RunTest("true || true", a));
 
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("id == 0").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("id != 0").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("id >  0").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("id <  0").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("id >= 0").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("id <= 0").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("0 == id").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("0 != id").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("0 >  id").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("0 <  id").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("0 >= id").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("0 <= id").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("0 == 0").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("0 != 0").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("0 >  0").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("0 <  0").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("0 >= 0").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("0 <= 0").Invoke(a));
+            Assert.IsTrue(!RunTest("id == 0", a));
+            Assert.IsTrue(RunTest("id != 0", a));
+            Assert.IsTrue(RunTest("id >  0", a));
+            Assert.IsTrue(!RunTest("id <  0", a));
+            Assert.IsTrue(RunTest("id >= 0", a));
+            Assert.IsTrue(!RunTest("id <= 0", a));
+            Assert.IsTrue(!RunTest("0 == id", a));
+            Assert.IsTrue(RunTest("0 != id", a));
+            Assert.IsTrue(!RunTest("0 >  id", a));
+            Assert.IsTrue(RunTest("0 <  id", a));
+            Assert.IsTrue(!RunTest("0 >= id", a));
+            Assert.IsTrue(RunTest("0 <= id", a));
+            Assert.IsTrue(RunTest("0 == 0", a));
+            Assert.IsTrue(!RunTest("0 != 0", a));
+            Assert.IsTrue(!RunTest("0 >  0", a));
+            Assert.IsTrue(!RunTest("0 <  0", a));
+            Assert.IsTrue(RunTest("0 >= 0", a));
+            Assert.IsTrue(RunTest("0 <= 0", a));
 
             // array value
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("text ==   {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("text ==i  {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("text =@   {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("text =@i  {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("text =~   {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("text !=   {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("text !=i  {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("text !~   {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("text !=@  {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("text !=@i {'hoge', 'fuga', 'piyo'}").Invoke(a));
+            Assert.IsTrue(!RunTest("text ==   {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(!RunTest("text ==i  {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(RunTest("text =@   {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(RunTest("text =@i  {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(RunTest("text =~   {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(RunTest("text !=   {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(RunTest("text !=i  {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(!RunTest("text !~   {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(!RunTest("text !=@  {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(!RunTest("text !=@i {'hoge', 'fuga', 'piyo'}", a));
 
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} ==   text").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} ==i  text").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} =@   text").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} =@i  text").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} =~   text").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=   text").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=i  text").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} =~   text").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=@  text").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=@i text").Invoke(a));
+            Assert.IsTrue(!RunTest("{'hoge', 'fuga', 'piyo'} ==   text", a));
+            Assert.IsTrue(!RunTest("{'hoge', 'fuga', 'piyo'} ==i  text", a));
+            Assert.IsTrue(!RunTest("{'hoge', 'fuga', 'piyo'} =@   text", a));
+            Assert.IsTrue(!RunTest("{'hoge', 'fuga', 'piyo'} =@i  text", a));
+            Assert.IsTrue(!RunTest("{'hoge', 'fuga', 'piyo'} =~   text", a));
+            Assert.IsTrue(RunTest("{'hoge', 'fuga', 'piyo'} !=   text", a));
+            Assert.IsTrue(RunTest("{'hoge', 'fuga', 'piyo'} !=i  text", a));
+            Assert.IsTrue(!RunTest("{'hoge', 'fuga', 'piyo'} =~   text", a));
+            Assert.IsTrue(RunTest("{'hoge', 'fuga', 'piyo'} !=@  text", a));
+            Assert.IsTrue(RunTest("{'hoge', 'fuga', 'piyo'} !=@i text", a));
 
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} ==   {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} ==i  {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} =@   {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} =@i  {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} =~   {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=   {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=i  {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !~   {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=@  {'hoge', 'fuga', 'piyo'}").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("{'hoge', 'fuga', 'piyo'} !=@i {'hoge', 'fuga', 'piyo'}").Invoke(a));
+            Assert.IsTrue(RunTest("{'hoge', 'fuga', 'piyo'} ==   {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(RunTest("{'hoge', 'fuga', 'piyo'} ==i  {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(RunTest("{'hoge', 'fuga', 'piyo'} =@   {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(RunTest("{'hoge', 'fuga', 'piyo'} =@i  {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(RunTest("{'hoge', 'fuga', 'piyo'} =~   {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(RunTest("{'hoge', 'fuga', 'piyo'} !=   {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(RunTest("{'hoge', 'fuga', 'piyo'} !=i  {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(!RunTest("{'hoge', 'fuga', 'piyo'} !~   {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(!RunTest("{'hoge', 'fuga', 'piyo'} !=@  {'hoge', 'fuga', 'piyo'}", a));
+            Assert.IsTrue(!RunTest("{'hoge', 'fuga', 'piyo'} !=@i {'hoge', 'fuga', 'piyo'}", a));
 
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("favorited == {true, false}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("favorited != {true, false}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("favorited && {true, false}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("favorited || {true, false}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{true, false} == favorited").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{true, false} != favorited").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{true, false} && favorited").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{true, false} || favorited").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{true, false} == {true, false}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{true, false} != {true, false}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{true, false} && {true, false}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{true, false} || {true, false}").Invoke(a));
+            Assert.IsTrue(RunTest("favorited == {true, false}", a));
+            Assert.IsTrue(RunTest("favorited != {true, false}", a));
+            Assert.IsTrue(RunTest("favorited && {true, false}", a));
+            Assert.IsTrue(RunTest("favorited || {true, false}", a));
+            Assert.IsTrue(RunTest("{true, false} == favorited", a));
+            Assert.IsTrue(RunTest("{true, false} != favorited", a));
+            Assert.IsTrue(RunTest("{true, false} && favorited", a));
+            Assert.IsTrue(RunTest("{true, false} || favorited", a));
+            Assert.IsTrue(RunTest("{true, false} == {true, false}", a));
+            Assert.IsTrue(RunTest("{true, false} != {true, false}", a));
+            Assert.IsTrue(RunTest("{true, false} && {true, false}", a));
+            Assert.IsTrue(RunTest("{true, false} || {true, false}", a));
 
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("id == {0, 1}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("id != {0, 1}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("id >  {0, 1}").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("id <  {0, 1}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("id >= {0, 1}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("id <= {0, 1}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{0, 1} == id").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{0, 1} != id").Invoke(a));
-            Assert.IsTrue(!FilterCompiler<TestClass>.Compile("{0, 1} >  id").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{0, 1} <  id").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{0, 1} >= id").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{0, 1} <= id").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{0, 1} == {0, 1}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{0, 1} != {0, 1}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{0, 1} >  {0, 1}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{0, 1} <  {0, 1}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{0, 1} >= {0, 1}").Invoke(a));
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("{0, 1} <= {0, 1}").Invoke(a));
+            Assert.IsTrue(RunTest("id == {0, 1}", a));
+            Assert.IsTrue(RunTest("id != {0, 1}", a));
+            Assert.IsTrue(RunTest("id >  {0, 1}", a));
+            Assert.IsTrue(!RunTest("id <  {0, 1}", a));
+            Assert.IsTrue(RunTest("id >= {0, 1}", a));
+            Assert.IsTrue(RunTest("id <= {0, 1}", a));
+            Assert.IsTrue(RunTest("{0, 1} == id", a));
+            Assert.IsTrue(RunTest("{0, 1} != id", a));
+            Assert.IsTrue(!RunTest("{0, 1} >  id", a));
+            Assert.IsTrue(RunTest("{0, 1} <  id", a));
+            Assert.IsTrue(RunTest("{0, 1} >= id", a));
+            Assert.IsTrue(RunTest("{0, 1} <= id", a));
+            Assert.IsTrue(RunTest("{0, 1} == {0, 1}", a));
+            Assert.IsTrue(RunTest("{0, 1} != {0, 1}", a));
+            Assert.IsTrue(RunTest("{0, 1} >  {0, 1}", a));
+            Assert.IsTrue(RunTest("{0, 1} <  {0, 1}", a));
+            Assert.IsTrue(RunTest("{0, 1} >= {0, 1}", a));
+            Assert.IsTrue(RunTest("{0, 1} <= {0, 1}", a));
         }
 
         [TestMethod]
         public void AllOps()
         {
-            FilterCompiler<TestClass>.Compile(AllOpsScript);
+            RunTest(AllOpsScript);
         }
 
         [TestMethod]
@@ -324,9 +334,9 @@ namespace FreesiaTest
         [TestMethod]
         public void UnaryOperator()
         {
-            Assert.IsFalse(FilterCompiler<TestClass>.Compile("!{true}").Invoke(new TestClass()));
-            Assert.IsFalse(FilterCompiler<TestClass>.Compile("!{true, true}").Invoke(new TestClass()));
-            Assert.IsFalse(FilterCompiler<TestClass>.Compile("!{B}").Invoke(new TestClass { B = true }));
+            Assert.IsFalse(RunTest("!{true}", new TestClass()));
+            Assert.IsFalse(RunTest("!{true, true}", new TestClass()));
+            Assert.IsFalse(RunTest("!{B}", new TestClass { B = true }));
         }
 
         [TestMethod]
@@ -345,7 +355,7 @@ namespace FreesiaTest
         {
             try
             {
-                FilterCompiler<TestClass>.Compile("texta");
+                RunTest("texta");
             }
             catch (ParseException)
             {
@@ -358,27 +368,36 @@ namespace FreesiaTest
         public void IndexerTest()
         {
             var a = new TestClass { Ints = new[] { "1" } };
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("Ints[0].Length == 1")(a));
+            Assert.IsTrue(RunTest("Ints[0].Length == 1", a));
         }
 
         [TestMethod]
         public void UserFunctionNamespaceTest()
         {
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("user.func")(new TestClass()));
+            Assert.IsTrue(RunTest("user.func"));
         }
 
         [TestMethod]
         public void NullableTest()
         {
-            Assert.IsFalse(FilterCompiler<TestClass>.Compile("B")(new TestClass()));
-            Assert.IsFalse(FilterCompiler<TestClass>.Compile("Ints.Length == 0")(new TestClass()));
-            Assert.IsFalse(FilterCompiler<TestClass>.Compile("TestClass2.S.Length == 0")(new TestClass()));
+            Assert.IsFalse(RunTest("B"));
+            Assert.IsFalse(RunTest("Ints.Length == 0"));
+            Assert.IsFalse(RunTest("TestClass2.S.Length == 0"));
         }
 
         [TestMethod]
         public void ComplexSyntaxTest()
         {
-            Assert.IsTrue(FilterCompiler<TestClass>.Compile("B || text == null && Ints.Length == 0")(new TestClass()));
+            Assert.IsTrue(RunTest("B || text == null && Ints.Length == 0", 
+                new TestClass { B = false, Ints = new string[0]}));
+        }
+
+        [TestMethod]
+        public void CaseSensitiveTest()
+        {
+            var a = new TestClass { text = "a", TestClass2 = new TestClass2 { S = "b" } };
+            Assert.IsTrue(RunTest("text ==i 'A'", a));
+            Assert.IsTrue(RunTest("testclass2.s ==i 'B'", a));
         }
 
         [TestMethod]
@@ -387,7 +406,7 @@ namespace FreesiaTest
             int Iteration = 50, c = 0;
             for (var i = 0; i < Iteration; ++i)
             {
-                FilterCompiler<TestClass>.Compile(
+                RunTest(
                     "{'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'} == {'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'} || " +
                     "{'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'} == {'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'} || " +
                     "{'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'} == {'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a', 'a'} || " +
