@@ -110,8 +110,14 @@ namespace Freesia.Internal
                 {
                     var t = ops.Peek();
                     if (t.Type == TokenType.OpenBracket) break;
-                    if (Operators.Priority[t.Type] >= Operators.Priority[token.Type])
+                    if ((Operators.Associativity[t.Type] == Associativity.LeftToRight &&
+                         Operators.Priority[t.Type] > Operators.Priority[token.Type])
+                        ||
+                        (Operators.Associativity[t.Type] == Associativity.RightToLeft &&
+                         Operators.Priority[t.Type] >= Operators.Priority[token.Type]))
+                    {
                         break;
+                    }
                     values.Push(MakeAst(ops.Pop(), ref values));
                 }
                 ops.Push(token);

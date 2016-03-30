@@ -124,7 +124,7 @@ namespace Freesia
                 case TokenType.GreaterThanEquals:
                     return MakeBinaryExpression(Expression.GreaterThanOrEqual, lhs, rhs);
                 case TokenType.PropertyAccess:
-                    return MakeMemberAccessExpression((Expression)lhs, (CompilerToken)rhs);
+                    return MakeMemberAccessExpression(lhs, (CompilerToken)rhs);
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -390,11 +390,20 @@ namespace Freesia
             return Expression.MakeIndex(property, propInfo, new[] { e });
         }
 
-        private Expression MakeMemberAccessExpression(Expression lhs, CompilerToken rhs)
+        private Expression MakeMemberAccessExpression(object lhs, CompilerToken rhs)
         {
-            var valueExpr = MakeNullableAccessExpression(lhs);
+            var expr = lhs as Expression ?? MakePropertyAccess((CompilerToken)lhs);
+            var valueExpr = MakeNullableAccessExpression(expr);
             var leftType = valueExpr.Type;
-            if(!rhs.IsSymbol()) throw new ParseException("Property accessor rhs should be Symbol.", rhs.Position);
+            if (!rhs.IsSymbol()) throw new ParseException("Property accessor rhs should be Symbol.", rhs.Position);
+            if (valueExpr.Type == typeof (UserFunctionTypePlaceholder))
+            {
+                if (!Functions.ContainsKey(rhs.Value.ToLowerInvariant()))
+                    throw new ParseException(String.Format("Property '{0}' is not found.", rhs.Value), -1);
+                var func = Functions[rhs.Value.ToLowerInvariant()];
+                return Expression.Call(Expression.Constant(func),
+                    func.GetType().GetRuntimeMethod("Invoke", new[] { typeof(T) }), _rootParameter);
+            }
             var prop = GetPreferredPropertyType(leftType, rhs.Value);
             return Expression.Property(valueExpr, prop);
         }
@@ -621,20 +630,9 @@ namespace Freesia
             foreach (var prop in properties)
             {
                 var propname = prop;
-                if (targetType == typeof(UserFunctionTypePlaceholder))
-                {
-                    if (Functions.ContainsKey(propname.ToLowerInvariant()))
-                    {
-                        var func = Functions[propname.ToLowerInvariant()];
-                        return Expression.Call(Expression.Constant(func),
-                            func.GetType().GetRuntimeMethod("Invoke", new[] { typeof(T) }), _rootParameter);
-                    }
-                    throw new ParseException(String.Format("Property '{0}' is not found.", t.Value), -1);
-                }
                 if (propname == UserFunctionNamespace && properties.First() == prop)
                 {
-                    targetType = typeof(UserFunctionTypePlaceholder);
-                    continue;
+                    return Expression.Constant(null, typeof (UserFunctionTypePlaceholder));
                 }
                 var propInfo = GetPreferredPropertyType(targetType, propname);
                 if (propInfo == null)

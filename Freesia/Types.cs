@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+﻿using Freesia.Internal.Types;
 
 namespace Freesia.Types
 {
@@ -94,31 +94,5 @@ namespace Freesia.Types
         IndexerEnd,
         IndexerNode,
         PropertyAccess
-    }
-
-    internal static class Operators
-    {
-        public static Dictionary<TokenType, byte> Priority = new Dictionary<TokenType, byte>
-        {
-            {TokenType.PropertyAccess, 10 },
-            {TokenType.Not, 20},
-            {TokenType.LessThan, 30},
-            {TokenType.GreaterThan, 30},
-            {TokenType.LessThanEquals, 30},
-            {TokenType.GreaterThanEquals, 30},
-            {TokenType.Equals, 40},
-            {TokenType.EqualsI, 40},
-            {TokenType.NotEquals, 40},
-            {TokenType.NotEqualsI, 40},
-            {TokenType.Regexp, 40},
-            {TokenType.NotRegexp, 40},
-            {TokenType.Contains, 40},
-            {TokenType.ContainsI, 40},
-            {TokenType.NotContains, 40},
-            {TokenType.NotContainsI, 40},
-            {TokenType.And, 50},
-            {TokenType.Or, 50},
-            {TokenType.Lambda, 100 }
-        };
     }
 }
