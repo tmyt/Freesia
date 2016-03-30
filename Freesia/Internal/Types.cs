@@ -32,6 +32,7 @@ namespace Freesia.Internal.Types
         public static Dictionary<TokenType, byte> Priority = new Dictionary<TokenType, byte>
         {
             {TokenType.PropertyAccess, 10 },
+            {TokenType.InvokeMethod, 10 },
             {TokenType.Not, 20},
             {TokenType.LessThan, 30},
             {TokenType.GreaterThan, 30},
@@ -55,6 +56,7 @@ namespace Freesia.Internal.Types
         public static Dictionary<TokenType, Associativity> Associativity = new Dictionary<TokenType, Associativity>
         {
             {TokenType.PropertyAccess, Types.Associativity.LeftToRight },
+            {TokenType.InvokeMethod, Types.Associativity.LeftToRight },
             {TokenType.Not, Types.Associativity.RightToLeft},
             {TokenType.LessThan, Types.Associativity.LeftToRight},
             {TokenType.GreaterThan, Types.Associativity.LeftToRight},
@@ -72,7 +74,7 @@ namespace Freesia.Internal.Types
             {TokenType.NotContainsI, Types.Associativity.LeftToRight},
             {TokenType.And, Types.Associativity.LeftToRight},
             {TokenType.Or, Types.Associativity.LeftToRight},
-            {TokenType.Lambda, Types.Associativity.RightToLeft }
+            {TokenType.Lambda, Types.Associativity.LeftToRight }
         };
     }
 
