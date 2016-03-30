@@ -11,6 +11,12 @@ namespace FreesiaTest
         public bool favorited { get; set; }
         public bool? B { get; set; }
         public string[] Ints { get; set; }
+        public TestClass2 TestClass2 { get; set; }
+    }
+
+    class TestClass2
+    {
+        public string S { get; set; }
     }
 
     [TestClass]
@@ -311,7 +317,8 @@ namespace FreesiaTest
             var syntax = FilterCompiler<TestClass>.Parse(AllOpsScript);
             FilterCompiler<TestClass>.SyntaxHighlight(syntax);
             FilterCompiler<TestClass>.ParseForSyntaxHightlight(AllOpsScript);
-            FilterCompiler<TestClass>.ParseForSyntaxHightlight("true false user 1 2 3 'a' == !a || b[1] || {true, false, null} text user.func text.length");
+            var info = FilterCompiler<TestClass>.ParseForSyntaxHightlight("true false user 1 2 3 'a' == !a || b[1] || {true, false, null} text user.func text.length").ToArray();
+            info.ToString();
         }
 
         [TestMethod]
@@ -326,10 +333,11 @@ namespace FreesiaTest
         public void Completion()
         {
             string s;
-            var completion = FilterCompiler<TestClass>.Completion("text == 'a' || te", out s);
+            var completion = FilterCompiler<TestClass>.Completion("text == 'a' || tex", out s);
             Assert.AreEqual(completion.First(), "text");
-            Assert.AreEqual(s, "te");
-            Assert.AreEqual(FilterCompiler<TestClass>.Completion("", out s).Count(), 6);
+            Assert.AreEqual(s, "tex");
+            Assert.AreEqual(FilterCompiler<TestClass>.Completion("", out s).Count(),
+                typeof(TestClass).GetProperties().Length + 1);
         }
 
         [TestMethod]
@@ -349,8 +357,28 @@ namespace FreesiaTest
         [TestMethod]
         public void IndexerTest()
         {
-            var a = new TestClass {Ints = new[] {"1"}};
+            var a = new TestClass { Ints = new[] { "1" } };
             Assert.IsTrue(FilterCompiler<TestClass>.Compile("Ints[0].Length == 1")(a));
+        }
+
+        [TestMethod]
+        public void UserFunctionNamespaceTest()
+        {
+            Assert.IsTrue(FilterCompiler<TestClass>.Compile("user.func")(new TestClass()));
+        }
+
+        [TestMethod]
+        public void NullableTest()
+        {
+            Assert.IsFalse(FilterCompiler<TestClass>.Compile("B")(new TestClass()));
+            Assert.IsFalse(FilterCompiler<TestClass>.Compile("Ints.Length == 0")(new TestClass()));
+            Assert.IsFalse(FilterCompiler<TestClass>.Compile("TestClass2.S.Length == 0")(new TestClass()));
+        }
+
+        [TestMethod]
+        public void ComplexSyntaxTest()
+        {
+            Assert.IsTrue(FilterCompiler<TestClass>.Compile("B || text == null && Ints.Length == 0")(new TestClass()));
         }
 
         [TestMethod]
