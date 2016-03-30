@@ -426,6 +426,12 @@ namespace FreesiaTest
         }
 
         [TestMethod]
+        public void MethodInvokeTest()
+        {
+            FilterCompiler<TestClass>.Compile("method(a => a == 1)");
+        }
+
+        [TestMethod]
         public void StressTest()
         {
             int Iteration = 50, c = 0;
