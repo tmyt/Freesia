@@ -59,7 +59,7 @@ namespace Freesia
             {
                 return MakeIndexerExpression(ast.Left, ast.Right);
             }
-            if (!ast.Token.IsOperand())
+            if (!ast.Token.IsOperator())
             {
                 return ast.Token;
             }

@@ -28,7 +28,7 @@ namespace Freesia.Types
             return $"{Type}: {Value}";
         }
 
-        public bool IsOperand()
+        public bool IsOperator()
         {
             return Operators.Priority.ContainsKey(this.Type);
         }
@@ -37,6 +37,16 @@ namespace Freesia.Types
         {
             return this.Type == TokenType.Symbol
                    || this.Type == TokenType.String
+                   || this.Type == TokenType.Double
+                   || this.Type == TokenType.Long
+                   || this.Type == TokenType.ULong
+                   || this.Type == TokenType.Bool
+                   || this.Type == TokenType.Null;
+        }
+
+        public bool IsConstant()
+        {
+            return this.Type == TokenType.String
                    || this.Type == TokenType.Double
                    || this.Type == TokenType.Long
                    || this.Type == TokenType.ULong
@@ -93,6 +103,7 @@ namespace Freesia.Types
         IndexerStart,
         IndexerEnd,
         IndexerNode,
-        PropertyAccess
+        PropertyAccess,
+        InvokeMethod,
     }
 }

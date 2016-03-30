@@ -97,6 +97,23 @@ namespace Freesia.Internal
                         values.Push(MakeAst(ops.Pop(), ref values));
                     }
                     ops.Pop();
+                    // make method call
+                    var args = values.Pop();
+                    var method = values.Peek();
+                    if (method.Token.Type == TokenType.Symbol
+                        || method.Token.Type == TokenType.PropertyAccess
+                        || method.Token.Type == TokenType.IndexerNode)
+                    {
+                        var node = new ASTNode();
+                        node.Left = method;
+                        node.Right = args;
+                        node.Token = new CompilerToken {Type = TokenType.InvokeMethod, Value = "()", Length = 2, Position = token.Position};
+                        values.Pop();
+                        values.Push(node);
+                        continue;
+                    }
+                    // the args is not args
+                    values.Push(args);
                     continue;
                 }
                 // found '('
