@@ -377,6 +377,7 @@ namespace FreesiaTest
         {
             var a = new TestClass { Ints = new[] { "1" } };
             Assert.IsTrue(RunTest("Ints[0].Length == 1", a));
+            Assert.IsTrue(RunTest("Ints[0] == '1'", a));
         }
 
         [TestMethod]
@@ -428,6 +429,7 @@ namespace FreesiaTest
         [TestMethod]
         public void MethodInvokeTest()
         {
+            FilterCompiler<TestClass>.Compile("entities.urls.contains(x => x =@i 'example')");
             FilterCompiler<TestClass>.Compile("method(a => a == 1)");
         }
 
