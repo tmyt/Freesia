@@ -349,27 +349,11 @@ namespace Freesia
 
         private Expression MakeToLowerCase(object o)
         {
-            if (o is Expression)
+            var method = typeof(string).GetRuntimeMethod("ToLowerInvariant", new Type[0]);
+            var expr = MakeExpression(o);
+            if (expr.Type == typeof(string))
             {
-                throw new ParseException("case insensitive option can only use to Property or String.", -1);
-            }
-            if (o is CompilerToken)
-            {
-                var t = (CompilerToken)o;
-                var method = typeof(string).GetRuntimeMethod("ToLowerInvariant", new Type[0]);
-                if (t.Type == TokenType.Symbol)
-                {
-                    var type = GetSymbolType(t);
-                    if (type != typeof(string))
-                    {
-                        throw new ParseException("case insensitive option can only use to Property or String.", -1);
-                    }
-                    return Expression.Call(MakeExpression(o), method);
-                }
-                if (t.Type == TokenType.String)
-                {
-                    return Expression.Call(MakeExpression(o), method);
-                }
+                return Expression.Call(expr, method);
             }
             throw new ParseException("case insensitive option can only use to Property or String.", -1);
         }
@@ -396,7 +380,7 @@ namespace Freesia
             var valueExpr = MakeNullableAccessExpression(expr);
             var leftType = valueExpr.Type;
             if (!rhs.IsSymbol()) throw new ParseException("Property accessor rhs should be Symbol.", rhs.Position);
-            if (valueExpr.Type == typeof (UserFunctionTypePlaceholder))
+            if (valueExpr.Type == typeof(UserFunctionTypePlaceholder))
             {
                 if (!Functions.ContainsKey(rhs.Value.ToLowerInvariant()))
                     throw new ParseException(String.Format("Property '{0}' is not found.", rhs.Value), -1);
@@ -632,7 +616,7 @@ namespace Freesia
                 var propname = prop;
                 if (propname == UserFunctionNamespace && properties.First() == prop)
                 {
-                    return Expression.Constant(null, typeof (UserFunctionTypePlaceholder));
+                    return Expression.Constant(null, typeof(UserFunctionTypePlaceholder));
                 }
                 var propInfo = GetPreferredPropertyType(targetType, propname);
                 if (propInfo == null)
