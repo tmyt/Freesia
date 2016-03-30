@@ -89,31 +89,33 @@ namespace Freesia.Types
         Null,
         Nop,
         ArrayNode,
-        Lambda
+        Lambda,
+        PropertyAccess
     }
 
     internal static class Operators
     {
         public static Dictionary<TokenType, byte> Priority = new Dictionary<TokenType, byte>
         {
-            {TokenType.Not, 0},
-            {TokenType.LessThan, 1},
-            {TokenType.GreaterThan, 1},
-            {TokenType.LessThanEquals, 1},
-            {TokenType.GreaterThanEquals, 1},
-            {TokenType.Equals, 2},
-            {TokenType.EqualsI, 2},
-            {TokenType.NotEquals, 2},
-            {TokenType.NotEqualsI, 2},
-            {TokenType.Regexp, 2},
-            {TokenType.NotRegexp, 2},
-            {TokenType.Contains, 2},
-            {TokenType.ContainsI, 2},
-            {TokenType.NotContains, 2},
-            {TokenType.NotContainsI, 2},
-            {TokenType.And, 3},
-            {TokenType.Or, 3},
-            {TokenType.Lambda, 99 }
+            {TokenType.PropertyAccess, 10 },
+            {TokenType.Not, 20},
+            {TokenType.LessThan, 30},
+            {TokenType.GreaterThan, 30},
+            {TokenType.LessThanEquals, 30},
+            {TokenType.GreaterThanEquals, 30},
+            {TokenType.Equals, 40},
+            {TokenType.EqualsI, 40},
+            {TokenType.NotEquals, 40},
+            {TokenType.NotEqualsI, 40},
+            {TokenType.Regexp, 40},
+            {TokenType.NotRegexp, 40},
+            {TokenType.Contains, 40},
+            {TokenType.ContainsI, 40},
+            {TokenType.NotContains, 40},
+            {TokenType.NotContainsI, 40},
+            {TokenType.And, 50},
+            {TokenType.Or, 50},
+            {TokenType.Lambda, 100 }
         };
     }
 }

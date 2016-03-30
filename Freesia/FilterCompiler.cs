@@ -119,6 +119,8 @@ namespace Freesia
                     return MakeBinaryExpression(Expression.LessThanOrEqual, lhs, rhs);
                 case TokenType.GreaterThanEquals:
                     return MakeBinaryExpression(Expression.GreaterThanOrEqual, lhs, rhs);
+                case TokenType.PropertyAccess:
+                    return MakeMemberAccessExpression((Expression)lhs, (CompilerToken)rhs);
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -368,6 +370,23 @@ namespace Freesia
             throw new ParseException("case insensitive option can only use to Property or String.", -1);
         }
 
+        private Expression MakeMemberAccessExpression(Expression lhs, CompilerToken rhs)
+        {
+            var valueExpr = MakeNullableAccessExpression(lhs);
+            var leftType = valueExpr.Type;
+            if(!rhs.IsSymbol()) throw new ParseException("Property accessor rhs should be Symbol.", rhs.Position);
+            var prop = GetPreferredPropertyType(leftType, rhs.Value);
+            return Expression.Property(valueExpr, prop);
+        }
+
+        private Expression MakeNullableAccessExpression(Expression expr)
+        {
+            var type = Nullable.GetUnderlyingType(expr.Type);
+            if (type == null) return expr;
+            var prop = expr.Type.GetRuntimeProperty("Value");
+            return Expression.Property(expr, prop);
+        }
+
         private Expression MakeWrappedExpression(object t)
         {
             if (t is Expression) return (Expression)t;
@@ -380,7 +399,7 @@ namespace Freesia
             if (o is Expression) return false;
             if (o is CompilerToken)
             {
-                var t = (CompilerToken) o;
+                var t = (CompilerToken)o;
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
@@ -422,11 +441,11 @@ namespace Freesia
             if (o is Expression) return false;
             if (o is CompilerToken)
             {
-                var t = (CompilerToken) o;
+                var t = (CompilerToken)o;
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
-                        var type = GetSymbolType((CompilerToken) o);
+                        var type = GetSymbolType((CompilerToken)o);
                         if (!type.GetTypeInfo().IsValueType) return false;
                         if (Nullable.GetUnderlyingType(type) != null) return true;
                         return false;
@@ -445,9 +464,9 @@ namespace Freesia
         private bool IsNullValue(object o)
         {
             if (o == null) return true;
-            if (o is ConstantExpression) return ((ConstantExpression) o).Value == null;
+            if (o is ConstantExpression) return ((ConstantExpression)o).Value == null;
             if (o is Expression) return false;
-            if (o is CompilerToken) return ((CompilerToken) o).Type == TokenType.Null;
+            if (o is CompilerToken) return ((CompilerToken)o).Type == TokenType.Null;
             return false;
         }
 
@@ -455,12 +474,12 @@ namespace Freesia
         {
             if (o is object[])
             {
-                return ((object[]) o).Select(IsConstant).Aggregate(false, (n, b) => n | b);
+                return ((object[])o).Select(IsConstant).Aggregate(false, (n, b) => n | b);
             }
             if (o is Expression) return false;
             if (o is CompilerToken)
             {
-                var t = (CompilerToken) o;
+                var t = (CompilerToken)o;
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
@@ -481,7 +500,7 @@ namespace Freesia
         {
             if (o is CompilerToken)
             {
-                var t = (CompilerToken) o;
+                var t = (CompilerToken)o;
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
@@ -504,10 +523,10 @@ namespace Freesia
 
         private Type GetValueType(object o)
         {
-            if (o is Expression) return ((Expression) o).Type;
+            if (o is Expression) return ((Expression)o).Type;
             if (o is CompilerToken)
             {
-                var t = (CompilerToken) o;
+                var t = (CompilerToken)o;
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
@@ -531,10 +550,10 @@ namespace Freesia
 
         private Expression MakeExpression(object o)
         {
-            if (o is Expression) return (Expression) o;
+            if (o is Expression) return (Expression)o;
             if (o is CompilerToken)
             {
-                var t = (CompilerToken) o;
+                var t = (CompilerToken)o;
                 switch (t.Type)
                 {
                     case TokenType.Symbol:

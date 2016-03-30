@@ -59,7 +59,7 @@ namespace Freesia.Internal
                         values.Pop();
                         node = values.Peek();
                     }
-                    arrayNode.Token = new CompilerToken { Type = TokenType.ArrayNode, Value = "{}", Length = 2 };
+                    arrayNode.Token = new CompilerToken { Type = TokenType.ArrayNode, Value = "{}", Length = 2, Position = node.Token.Position };
                     if (arrayNode.Left == null)
                     {
                         arrayNode.Left = arrayNode.Right;

@@ -143,6 +143,9 @@ namespace Freesia.Internal
                     case ',':
                         yield return new CompilerToken { Type = TokenType.ArrayDelimiter, Position = start, Length = 1 };
                         break;
+                    case '.':
+                        yield return new CompilerToken { Type = TokenType.PropertyAccess, Position = start, Length = 1 };
+                        break;
                     case '=':
                         switch (LexChars('~', '=', '@', '>'))
                         {
@@ -238,8 +241,18 @@ namespace Freesia.Internal
                         break;
                     // 文字列とか数字とかそのへん
                     default:
-                        var str = current + TakeWhile('(', ')', '{', '}', ',', '=', '!', '&', '|', '"',
-                            '\'', '>', '<', ' ', '\t', '\r', '\n');
+                        var str = "" + current;
+                        switch (DeterminTokenType(str))
+                        {
+                            case TokenType.Symbol:
+                                str += TakeWhile('(', ')', '{', '}', ',', '.', '=', '!', '&', '|', '"', '\'', '>', '<', ' ', '\t', '\r', '\n');
+                                break;
+                            case TokenType.Double:
+                            case TokenType.Long:
+                            case TokenType.ULong:
+                                str += TakeWhile('(', ')', '{', '}', ',', '=', '!', '&', '|', '"', '\'', '>', '<', ' ', '\t', '\r', '\n');
+                                break;
+                        }
                         if (!String.IsNullOrEmpty(str))
                             yield return new CompilerToken { Type = DeterminTokenType(str), Value = str, Position = start, Length = _index - start };
                         break;
