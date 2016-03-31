@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Freesia.Internal.Types;
 using Freesia.Types;
 
@@ -15,7 +16,7 @@ namespace Freesia.Internal
                 : new ASTNode { Token = op, Left = lhs, Right = rhs };
         }
 
-        public static ASTNode Generate(IEnumerable<CompilerToken> list)
+        private static ASTNode GenerateInternal(IEnumerable<CompilerToken> list)
         {
             var ops = new Stack<CompilerToken>();
             var values = new Stack<ASTNode>();
@@ -38,7 +39,7 @@ namespace Freesia.Internal
                 // enter Array parsing
                 if (token.Type == TokenType.ArrayStart) inArray = true;
                 // correct token
-                if (token.IsSymbol|| token.Type == TokenType.ArrayStart || token.Type == TokenType.IndexerStart)
+                if (token.IsSymbol || token.Type == TokenType.ArrayStart || token.Type == TokenType.IndexerStart)
                 {
                     values.Push(new ASTNode(token));
                     continue;
@@ -149,6 +150,18 @@ namespace Freesia.Internal
             }
             // this is AST
             return values.Pop();
+        }
+
+        public static ASTNode Generate(IEnumerable<CompilerToken> list)
+        {
+            try
+            {
+                return GenerateInternal(list);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
         }
     }
 }
