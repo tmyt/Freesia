@@ -27,12 +27,12 @@ namespace FreesiaTest
             "text == 'a' && (text ==i 'a' || (text =@ 'a' && text =@i 'a')) || text =~ 'a' || text != 'a' || text !=i 'a' || text !=@ 'a' || text !=@i 'a' ||" +
             "text !~ 'a' && (id == 0 || id != 0 || id < 0 || id > 0 || id <= 0 || id >= 0) && favorited || !favorited && (favorited || favorited && false)";
 
-        private bool RunTest(string script, TestClass obj)
+        private static bool RunTest(string script, TestClass obj)
         {
             return FilterCompiler<TestClass>.Compile(script)(obj);
         }
 
-        private bool RunTest(string script)
+        private static bool RunTest(string script)
         {
             return FilterCompiler<TestClass>.Compile(script)(new TestClass());
         }
@@ -42,6 +42,7 @@ namespace FreesiaTest
         {
             FilterCompiler<TestClass>.UserFunctionNamespace = "user";
             FilterCompiler<TestClass>.Functions.Add("func", _ => true);
+            RunTest("user.func == false");
         }
 
         [TestMethod]
@@ -332,32 +333,35 @@ namespace FreesiaTest
             var info = FilterCompiler<TestClass>.ParseForSyntaxHightlight(
                 "user.func == false && ints.contains(x => x =@i 'aa') && favorited != true || testclass2.s == 'bbb' && id >= 10").ToArray();
             Assert.AreEqual(info[0].Type, SyntaxType.Identifier);  // user
-            Assert.AreEqual(info[1].Type, SyntaxType.Identifier);  // func
-            Assert.AreEqual(info[2].Type, SyntaxType.Operator);    // ==
-            Assert.AreEqual(info[3].Type, SyntaxType.Keyword);     // false
-            Assert.AreEqual(info[4].Type, SyntaxType.Operator);    // &&
-            Assert.AreEqual(info[5].Type, SyntaxType.Identifier);  // ints
-            Assert.AreEqual(info[6].Type, SyntaxType.Identifier);  // contains
-            Assert.AreEqual(info[7].Type, SyntaxType.Operator);    // (
-            Assert.AreEqual(info[8].Type, SyntaxType.Error);       // x
-            Assert.AreEqual(info[9].Type, SyntaxType.Operator);    // =>
-            Assert.AreEqual(info[10].Type, SyntaxType.Error);      // x
-            Assert.AreEqual(info[11].Type, SyntaxType.Operator);   // =@i
-            Assert.AreEqual(info[12].Type, SyntaxType.String);     // 'aa'
-            Assert.AreEqual(info[13].Type, SyntaxType.Operator);   // )
-            Assert.AreEqual(info[14].Type, SyntaxType.Operator);   // &&
-            Assert.AreEqual(info[15].Type, SyntaxType.Identifier); // favorited
-            Assert.AreEqual(info[16].Type, SyntaxType.Operator);   // !=
-            Assert.AreEqual(info[17].Type, SyntaxType.Keyword);    // true
-            Assert.AreEqual(info[18].Type, SyntaxType.Operator);   // ||
-            Assert.AreEqual(info[19].Type, SyntaxType.Identifier); // testclass2
-            Assert.AreEqual(info[20].Type, SyntaxType.Identifier); // s
-            Assert.AreEqual(info[21].Type, SyntaxType.Operator);   // ==
-            Assert.AreEqual(info[22].Type, SyntaxType.String);     // 'bbb'
-            Assert.AreEqual(info[23].Type, SyntaxType.Operator);   // &&
-            Assert.AreEqual(info[24].Type, SyntaxType.Identifier); // id
-            Assert.AreEqual(info[25].Type, SyntaxType.Operator);   // >=
-            Assert.AreEqual(info[26].Type, SyntaxType.Constant);   // 10
+            Assert.AreEqual(info[1].Type, SyntaxType.Operator);    // .
+            Assert.AreEqual(info[2].Type, SyntaxType.Identifier);  // func
+            Assert.AreEqual(info[3].Type, SyntaxType.Operator);    // ==
+            Assert.AreEqual(info[4].Type, SyntaxType.Keyword);     // false
+            Assert.AreEqual(info[5].Type, SyntaxType.Operator);    // &&
+            Assert.AreEqual(info[6].Type, SyntaxType.Identifier);  // ints
+            Assert.AreEqual(info[7].Type, SyntaxType.Operator);    // .
+            Assert.AreEqual(info[8].Type, SyntaxType.Identifier);  // contains
+            Assert.AreEqual(info[9].Type, SyntaxType.Operator);    // (
+            Assert.AreEqual(info[10].Type, SyntaxType.Error);       // x
+            Assert.AreEqual(info[11].Type, SyntaxType.Operator);    // =>
+            Assert.AreEqual(info[12].Type, SyntaxType.Error);      // x
+            Assert.AreEqual(info[13].Type, SyntaxType.Operator);   // =@i
+            Assert.AreEqual(info[14].Type, SyntaxType.String);     // 'aa'
+            Assert.AreEqual(info[15].Type, SyntaxType.Operator);   // )
+            Assert.AreEqual(info[16].Type, SyntaxType.Operator);   // &&
+            Assert.AreEqual(info[17].Type, SyntaxType.Identifier); // favorited
+            Assert.AreEqual(info[18].Type, SyntaxType.Operator);   // !=
+            Assert.AreEqual(info[19].Type, SyntaxType.Keyword);    // true
+            Assert.AreEqual(info[20].Type, SyntaxType.Operator);   // ||
+            Assert.AreEqual(info[21].Type, SyntaxType.Identifier); // testclass2
+            Assert.AreEqual(info[22].Type, SyntaxType.Operator);    // .
+            Assert.AreEqual(info[23].Type, SyntaxType.Identifier); // s
+            Assert.AreEqual(info[24].Type, SyntaxType.Operator);   // ==
+            Assert.AreEqual(info[25].Type, SyntaxType.String);     // 'bbb'
+            Assert.AreEqual(info[26].Type, SyntaxType.Operator);   // &&
+            Assert.AreEqual(info[27].Type, SyntaxType.Identifier); // id
+            Assert.AreEqual(info[28].Type, SyntaxType.Operator);   // >=
+            Assert.AreEqual(info[29].Type, SyntaxType.Constant);   // 10
         }
 
         [TestMethod]
@@ -369,19 +373,25 @@ namespace FreesiaTest
         }
 
         [TestMethod]
-        public void Completion()
+        public void CompletionTest()
         {
             string s;
-            FilterCompiler<TestClass>.Completion("'", out s);
-            FilterCompiler<TestClass>.Completion("\"", out s);
-            FilterCompiler<TestClass>.Completion("'a", out s);
-            FilterCompiler<TestClass>.Completion("a", out s);
-            FilterCompiler<TestClass>.Completion("text.l", out s);
-            FilterCompiler<TestClass>.Completion("user.", out s);
-            FilterCompiler<TestClass>.Completion("user.f", out s);
+            //FilterCompiler<TestClass>.Completion("'", out s);
+            //FilterCompiler<TestClass>.Completion("\"", out s);
+            //FilterCompiler<TestClass>.Completion("'a", out s);
+            //FilterCompiler<TestClass>.Completion("a", out s);
+            //FilterCompiler<TestClass>.Completion("text.l", out s);
+            //FilterCompiler<TestClass>.Completion("user.", out s);
+            //FilterCompiler<TestClass>.Completion("user.f", out s);
             var completion = FilterCompiler<TestClass>.Completion("text == 'a' || tex", out s);
-            Assert.AreEqual(completion.First(), "text");
-            Assert.AreEqual(s, "tex");
+            Assert.AreEqual("text", completion.First());
+            Assert.AreEqual("tex", s);
+            completion = FilterCompiler<TestClass>.Completion("text == 'a' || ints.le", out s);
+            Assert.AreEqual("length", completion.First());
+            Assert.AreEqual("le", s);
+            completion = FilterCompiler<TestClass>.Completion("testclass2.", out s);
+            Assert.AreEqual("s", completion.First());
+            Assert.AreEqual("", s);
             Assert.AreEqual(FilterCompiler<TestClass>.Completion("", out s).Count(),
                 typeof(TestClass).GetProperties().Length + 1);
         }
@@ -442,10 +452,10 @@ namespace FreesiaTest
         [TestMethod]
         public void LambdaTest()
         {
-            FilterCompiler<TestClass>.Parse("a => a == 1");
+            FilterCompiler<TestClass>.Parse("a => a != null");
             try
             {
-                FilterCompiler<TestClass>.Compile("a => a == 1");
+                FilterCompiler<TestClass>.Compile("a => a != null");
             }
             catch (ParseException)
             {

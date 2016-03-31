@@ -695,6 +695,18 @@ namespace Freesia
             {
                 var propname = prop.Value;
                 var syntaxType = default(SyntaxType);
+                if (prop.Type == TokenType.PropertyAccess)
+                {
+                    yield return new SyntaxInfo
+                    {
+                        Position = prop.Position,
+                        Length = prop.Length,
+                        SubType = TokenType.PropertyAccess,
+                        Type = SyntaxType.Operator,
+                        Value = "."
+                    };
+                    continue;
+                }
                 if (propname.ToLowerInvariant() == UserFunctionNamespace && symbols.First() == prop)
                 {
                     syntaxType = SyntaxType.Identifier;
@@ -784,6 +796,7 @@ namespace Freesia
                         yield return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Operator, Value = t.Value };
                         break;
                     case TokenType.Symbol:
+                    case TokenType.PropertyAccess:
                         pendingSymbols.Enqueue(t);
                         break;
                     case TokenType.String:
@@ -800,6 +813,8 @@ namespace Freesia
                         break;
                 }
             }
+            // 残ってたら全部出す
+            foreach (var a in ParseSymbolType(pendingSymbols)) yield return a;
         }
 
         public static Func<T, bool> Compile(string text)
@@ -821,7 +836,7 @@ namespace Freesia
             var c = new Tokenizer(text);
             var syntax = SyntaxHighlight(c.Parse(true)).ToArray();
             var q = syntax.Reverse()
-                    .TakeWhile(t => t.SubType == TokenType.Symbol)
+                    .TakeWhile(t => t.SubType == TokenType.Symbol || t.SubType == TokenType.PropertyAccess)
                     .SkipWhile(t => string.IsNullOrWhiteSpace(t.Value))
                     .ToList();
             prefix = "";
@@ -838,8 +853,8 @@ namespace Freesia
                     .OrderBy(s => s);
             }
             // 最後が '.' ならプロパティを見る
-            var lookup = q[0].Value == ".";
-            q = q.Where(t => t.Value != ".").ToList();
+            var lookup = q[0].SubType == TokenType.PropertyAccess;
+            q = q.Where(t => t.SubType != TokenType.PropertyAccess).ToList();
             // 2個以上エラーは空
             if (q.Count(t => t.Type == SyntaxType.Error) > 1) return new List<string>();
             // 型を検索する
