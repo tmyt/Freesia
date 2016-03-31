@@ -385,7 +385,13 @@ namespace FreesiaTest
             //FilterCompiler<TestClass>.Completion("text.l", out s);
             //FilterCompiler<TestClass>.Completion("user.", out s);
             //FilterCompiler<TestClass>.Completion("user.f", out s);
-            var completion = FilterCompiler<TestClass>.Completion("text == 'a' || tex", out s);
+            var completion = FilterCompiler<TestClass>.Completion("ints.contains(x => x == 'a", out s);
+            Assert.IsTrue(!completion.Any());
+            Assert.AreEqual("", s);
+            completion = FilterCompiler<TestClass>.Completion("ints.contains(x => x.c", out s);
+            Assert.AreEqual("chars", completion.First());
+            Assert.AreEqual("c", s);
+            completion = FilterCompiler<TestClass>.Completion("text == 'a' || tex", out s);
             Assert.AreEqual("text", completion.First());
             Assert.AreEqual("tex", s);
             completion = FilterCompiler<TestClass>.Completion("text == 'a' || ints.le", out s);
