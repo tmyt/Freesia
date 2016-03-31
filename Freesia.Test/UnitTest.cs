@@ -186,12 +186,12 @@ namespace FreesiaTest
             Assert.IsTrue(!RunTest("text ==   'hoge'", a));
             Assert.IsTrue(!RunTest("text ==i  'hoge'", a));
             Assert.IsTrue(!RunTest("text =@   'hoge'", a));
-            Assert.IsTrue( RunTest("text =@i  'hoge'", a));
+            Assert.IsTrue(RunTest("text =@i  'hoge'", a));
             Assert.IsTrue(!RunTest("text =~   'hoge'", a));
-            Assert.IsTrue( RunTest("text !=   'hoge'", a));
-            Assert.IsTrue( RunTest("text !=i  'hoge'", a));
-            Assert.IsTrue( RunTest("text !~   'hoge'", a));
-            Assert.IsTrue( RunTest("text !=@  'hoge'", a));
+            Assert.IsTrue(RunTest("text !=   'hoge'", a));
+            Assert.IsTrue(RunTest("text !=i  'hoge'", a));
+            Assert.IsTrue(RunTest("text !~   'hoge'", a));
+            Assert.IsTrue(RunTest("text !=@  'hoge'", a));
             Assert.IsTrue(!RunTest("text !=@i 'hoge'", a));
 
             Assert.IsTrue(!RunTest("'hoge' ==   text", a));
@@ -199,11 +199,11 @@ namespace FreesiaTest
             Assert.IsTrue(!RunTest("'hoge' =@   text", a));
             Assert.IsTrue(!RunTest("'hoge' =@i  text", a));
             Assert.IsTrue(!RunTest("'hoge' =~   text", a));
-            Assert.IsTrue( RunTest("'hoge' !=   text", a));
-            Assert.IsTrue( RunTest("'hoge' !=i  text", a));
-            Assert.IsTrue( RunTest("'hoge' !~   text", a));
-            Assert.IsTrue( RunTest("'hoge' !=@  text", a));
-            Assert.IsTrue( RunTest("'hoge' !=@i text", a));
+            Assert.IsTrue(RunTest("'hoge' !=   text", a));
+            Assert.IsTrue(RunTest("'hoge' !=i  text", a));
+            Assert.IsTrue(RunTest("'hoge' !~   text", a));
+            Assert.IsTrue(RunTest("'hoge' !=@  text", a));
+            Assert.IsTrue(RunTest("'hoge' !=@i text", a));
 
             Assert.IsTrue(RunTest("'hoge' ==   'hoge'", a));
             Assert.IsTrue(RunTest("'hoge' ==i  'hoge'", a));
@@ -397,8 +397,8 @@ namespace FreesiaTest
         [TestMethod]
         public void ComplexSyntaxTest()
         {
-            Assert.IsTrue(RunTest("B || text == null && Ints.Length == 0", 
-                new TestClass { B = false, Ints = new string[0]}));
+            Assert.IsTrue(RunTest("B || text == null && Ints.Length == 0",
+                new TestClass { B = false, Ints = new string[0] }));
         }
 
         [TestMethod]
@@ -429,8 +429,10 @@ namespace FreesiaTest
         [TestMethod]
         public void MethodInvokeTest()
         {
-            FilterCompiler<TestClass>.Compile("entities.urls.contains(x => x =@i 'example')");
-            FilterCompiler<TestClass>.Compile("method(a => a == 1)");
+            var a = new TestClass { Ints = new[] { "https://www.example.com/" } };
+            Assert.IsTrue(RunTest("ints.contains(x => x =@i 'example')", a));
+            //FilterCompiler<TestClass>.Compile("entities.urls.contains(x => x =@i 'example')");
+            //FilterCompiler<TestClass>.Compile("method(a => a == 1)");
         }
 
         [TestMethod]

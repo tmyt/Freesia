@@ -41,6 +41,8 @@
   <ItemGroup>
     <Compile Include="FilterCompiler.cs" />
     <Compile Include="Internal\ASTBuilder.cs" />
+    <Compile Include="Internal\Reflection\Cache.cs" />
+    <Compile Include="Internal\Reflection\Helper.cs" />
     <Compile Include="Internal\Tokenizer.cs" />
     <Compile Include="Internal\Types.cs" />
     <Compile Include="ParseException.cs" />

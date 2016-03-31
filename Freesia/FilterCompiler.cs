@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Freesia.Internal;
+using Freesia.Internal.Reflection;
 using Freesia.Internal.Types;
 using Freesia.Types;
 
@@ -66,7 +67,12 @@ namespace Freesia
             if (ast.Token.Type == TokenType.Lambda)
             {
                 // Parse for Lambda
-                return MakeLambdaExpression(typeof(string), ast.Left.Token, ast.Right);
+                return MakeLambdaExpression(typeof(object), ast.Left.Token, ast.Right);
+            }
+            if (ast.Token.Type == TokenType.InvokeMethod)
+            {
+                // Parse for MethodInvoke
+                return MakeMethodInvokeExpression(ast.Left, ast.Right);
             }
             if (ast.Token.Type == TokenType.Not)
             {
@@ -349,11 +355,10 @@ namespace Freesia
 
         private Expression MakeToLowerCase(object o)
         {
-            var method = typeof(string).GetRuntimeMethod("ToLowerInvariant", new Type[0]);
             var expr = MakeExpression(o);
             if (expr.Type == typeof(string))
             {
-                return Expression.Call(expr, method);
+                return Expression.Call(expr, Cache.StringToLowerInvariant.Value);
             }
             throw new ParseException("case insensitive option can only use to Property or String.", -1);
         }
@@ -390,6 +395,35 @@ namespace Freesia
             }
             var prop = GetPreferredPropertyType(leftType, rhs.Value);
             return Expression.Property(valueExpr, prop);
+        }
+
+        private Expression MakeMethodInvokeExpression(ASTNode lhs, ASTNode rhs)
+        {
+            if (lhs.Token.Type != TokenType.PropertyAccess)
+                throw new ParseException("Invoke method requires property access.", lhs.Token.Position);
+            if (rhs.Token.Type != TokenType.Lambda)
+                throw new ParseException("Invoke method requires lambda expression.", rhs.Token.Position);
+            var rootExpr = MakeExpression(CompileOne(lhs.Left));
+            var ie = rootExpr.Type.GetTypeInfo().ImplementedInterfaces
+                .FirstOrDefault(t => t.GetTypeInfo().IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+            if (ie == null)
+                throw new ParseException("Method only apply to IE<T>.", lhs.Token.Position);
+            var argType = ie.GenericTypeArguments[0]; // IE< 'T' >
+            // build lambda expression
+            var closure = MakeLambdaExpression(argType, rhs.Left.Token, rhs.Right);
+            // apply method
+            var method = default(MethodInfo);
+            var methodName = lhs.Right.Token.Value.ToLowerInvariant();
+            var closureExpr = ((LambdaExpression)closure).Compile();
+            switch (methodName)
+            {
+                case "contains":
+                    method = (MethodInfo)Cache.EnumerableAny.Value.MakeGenericMethod(argType).Invoke(null, new object[0]);
+                    break;
+                default:
+                    throw new ParseException($"Method {lhs.Right.Token.Value} is not supported.", lhs.Right.Token.Position);
+            }
+            return Expression.Call(method, rootExpr, Expression.Constant(closureExpr));
         }
 
         private Expression MakeNullableAccessExpression(Expression expr)
@@ -591,17 +625,15 @@ namespace Freesia
                     typeof(Regex).GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 2),
                     rhs, Expression.Constant(RegexOptions.Singleline));
             var regexObj = Expression.Parameter(typeof(Regex), "regex");
-            var isMatchMethod = typeof(Regex).GetRuntimeMethod("IsMatch", new[] { typeof(string) });
             return Expression.Block(
                 new[] { regexObj },
                 Expression.Assign(regexObj, ctor),
-                Expression.Call(regexObj, isMatchMethod, lhs));
+                Expression.Call(regexObj, Cache.RegexIsMatch.Value, lhs));
         }
 
         private Expression MakeContainsExpression(Expression lhs, Expression rhs)
         {
-            var containsMethod = typeof(string).GetRuntimeMethod("Contains", new[] { typeof(string) });
-            return Expression.Call(lhs, containsMethod, rhs);
+            return Expression.Call(lhs, Cache.StringContains.Value, rhs);
         }
 
         private Expression MakePropertyAccess(CompilerToken t)
