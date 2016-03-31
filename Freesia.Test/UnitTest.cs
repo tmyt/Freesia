@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Freesia;
+using Freesia.Types;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FreesiaTest
@@ -324,12 +325,39 @@ namespace FreesiaTest
         [TestMethod]
         public void SyntaxHighlight()
         {
-            var syntax = FilterCompiler<TestClass>.Parse(AllOpsScript);
-            FilterCompiler<TestClass>.SyntaxHighlight(syntax);
-            FilterCompiler<TestClass>.ParseForSyntaxHightlight(AllOpsScript);
-            FilterCompiler<TestClass>.ParseForSyntaxHightlight("user.func == true");
-            var info = FilterCompiler<TestClass>.ParseForSyntaxHightlight("true false user 1 2 3 'a' == !a || b[1] || {true, false, null} text user.func text.length").ToArray();
-            info.ToString();
+            //var syntax = FilterCompiler<TestClass>.Parse(AllOpsScript);
+            //FilterCompiler<TestClass>.SyntaxHighlight(syntax);
+            //FilterCompiler<TestClass>.ParseForSyntaxHightlight(AllOpsScript);
+            //FilterCompiler<TestClass>.ParseForSyntaxHightlight("true false user 1 2 3 'a' == !a || b[1] || {true, false, null} text user.func text.length").ToArray();
+            var info = FilterCompiler<TestClass>.ParseForSyntaxHightlight(
+                "user.func == false && ints.contains(x => x =@i 'aa') && favorited != true || testclass2.s == 'bbb' && id >= 10").ToArray();
+            Assert.AreEqual(info[0].Type, SyntaxType.Identifier);  // user
+            Assert.AreEqual(info[1].Type, SyntaxType.Identifier);  // func
+            Assert.AreEqual(info[2].Type, SyntaxType.Operator);    // ==
+            Assert.AreEqual(info[3].Type, SyntaxType.Keyword);     // false
+            Assert.AreEqual(info[4].Type, SyntaxType.Operator);    // &&
+            Assert.AreEqual(info[5].Type, SyntaxType.Identifier);  // ints
+            Assert.AreEqual(info[6].Type, SyntaxType.Identifier);  // contains
+            Assert.AreEqual(info[7].Type, SyntaxType.Operator);    // (
+            Assert.AreEqual(info[8].Type, SyntaxType.Error);       // x
+            Assert.AreEqual(info[9].Type, SyntaxType.Operator);    // =>
+            Assert.AreEqual(info[10].Type, SyntaxType.Error);      // x
+            Assert.AreEqual(info[11].Type, SyntaxType.Operator);   // =@i
+            Assert.AreEqual(info[12].Type, SyntaxType.String);     // 'aa'
+            Assert.AreEqual(info[13].Type, SyntaxType.Operator);   // )
+            Assert.AreEqual(info[14].Type, SyntaxType.Operator);   // &&
+            Assert.AreEqual(info[15].Type, SyntaxType.Identifier); // favorited
+            Assert.AreEqual(info[16].Type, SyntaxType.Operator);   // !=
+            Assert.AreEqual(info[17].Type, SyntaxType.Keyword);    // true
+            Assert.AreEqual(info[18].Type, SyntaxType.Operator);   // ||
+            Assert.AreEqual(info[19].Type, SyntaxType.Identifier); // testclass2
+            Assert.AreEqual(info[20].Type, SyntaxType.Identifier); // s
+            Assert.AreEqual(info[21].Type, SyntaxType.Operator);   // ==
+            Assert.AreEqual(info[22].Type, SyntaxType.String);     // 'bbb'
+            Assert.AreEqual(info[23].Type, SyntaxType.Operator);   // &&
+            Assert.AreEqual(info[24].Type, SyntaxType.Identifier); // id
+            Assert.AreEqual(info[25].Type, SyntaxType.Operator);   // >=
+            Assert.AreEqual(info[26].Type, SyntaxType.Constant);   // 10
         }
 
         [TestMethod]

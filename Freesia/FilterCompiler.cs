@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Freesia.Internal;
+using Freesia.Internal.Extensions;
 using Freesia.Internal.Reflection;
 using Freesia.Internal.Types;
 using Freesia.Types;
@@ -404,8 +405,7 @@ namespace Freesia
             if (rhs.Token.Type != TokenType.Lambda)
                 throw new ParseException("Invoke method requires lambda expression.", rhs.Token.Position);
             var rootExpr = MakeExpression(CompileOne(lhs.Left));
-            var ie = rootExpr.Type.GetTypeInfo().ImplementedInterfaces
-                .FirstOrDefault(t => t.GetTypeInfo().IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+            var ie = rootExpr.Type.GetUnderlyingEnumerableType();
             if (ie == null)
                 throw new ParseException("Method only apply to IE<T>.", lhs.Token.Position);
             var argType = ie.GenericTypeArguments[0]; // IE< 'T' >
@@ -684,61 +684,53 @@ namespace Freesia
 
         private static PropertyInfo GetPreferredPropertyType(Type targetType, string propname)
         {
-            return targetType.GetRuntimeProperties().FirstOrDefault(p => p.Name.ToLowerInvariant() == propname.ToLowerInvariant());
+            return targetType?.GetRuntimeProperties().FirstOrDefault(p => p.Name.ToLowerInvariant() == propname.ToLowerInvariant());
         }
 
-        private static IEnumerable<SyntaxInfo> ParseSymbolType(CompilerToken t)
+        private static IEnumerable<SyntaxInfo> ParseSymbolType(Queue<CompilerToken> symbols)
         {
-            if (t.Type != TokenType.Symbol) yield break;
-            var properties = t.Value.Split('.');
             var statusType = typeof(T);
             var targetType = statusType;
-            var pos = t.Position;
-            foreach (var prop in properties)
+            foreach (var prop in symbols)
             {
-                var propname = prop;
-                if (propname.ToLowerInvariant() == UserFunctionNamespace && properties.First() == prop)
+                var propname = prop.Value;
+                var syntaxType = default(SyntaxType);
+                if (propname.ToLowerInvariant() == UserFunctionNamespace && symbols.First() == prop)
                 {
-                    yield return new SyntaxInfo
-                    {
-                        Position = pos,
-                        Length = propname.Length,
-                        SubType = TokenType.Symbol,
-                        Type = SyntaxType.Identifier,
-                        Value = propname
-                    };
+                    syntaxType = SyntaxType.Identifier;
                     targetType = typeof(UserFunctionTypePlaceholder);
-                    pos += propname.Length;
+                }
+                else if (targetType == typeof(UserFunctionTypePlaceholder))
+                {
+                    syntaxType = Functions.ContainsKey(prop.Value) ? SyntaxType.Identifier : SyntaxType.Error;
+                    targetType = null;
                 }
                 else
                 {
                     var propInfo = GetPreferredPropertyType(targetType, propname);
-                    if (propInfo == null)
+                    syntaxType = propInfo == null ? SyntaxType.Error : SyntaxType.Identifier;
+                    if (targetType?.IsEnmerable() ?? false)
                     {
-                        yield return
-                            new SyntaxInfo
-                            {
-                                Position = pos,
-                                Length = t.Length - (pos - t.Position),
-                                SubType = TokenType.Symbol,
-                                Type = SyntaxType.Error,
-                                Value = t.Value.Substring(pos - t.Position)
-                            };
-                        yield break;
+                        // TODO: Currently only supports 'contains'
+                        syntaxType = prop.Value.ToLowerInvariant() == "contains"
+                            ? SyntaxType.Identifier
+                            : SyntaxType.Error;
+                        targetType = null;
                     }
-                    yield return
-                        new SyntaxInfo
-                        {
-                            Position = pos,
-                            Length = propname.Length,
-                            SubType = TokenType.Symbol,
-                            Type = SyntaxType.Identifier,
-                            Value = propname
-                        };
-                    targetType = propInfo.PropertyType;
-                    pos += propname.Length;
+                    else
+                    {
+                        targetType = propInfo?.PropertyType;
+                    }
                 }
-                pos += 1;
+                yield return new SyntaxInfo
+                {
+                    Position = prop.Position,
+                    Length = prop.Length,
+                    SubType = TokenType.Symbol,
+                    Type = syntaxType,
+                    Value = propname
+                };
+                if (syntaxType == SyntaxType.Error) yield break;
             }
         }
 
@@ -757,8 +749,14 @@ namespace Freesia
 
         public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<CompilerToken> tokenList)
         {
+            Queue<CompilerToken> pendingSymbols = new Queue<CompilerToken>();
             foreach (var t in tokenList)
             {
+                if (t.Type != TokenType.Symbol && t.Type != TokenType.PropertyAccess)
+                {
+                    foreach (var a in ParseSymbolType(pendingSymbols)) yield return a;
+                    pendingSymbols.Clear();
+                }
                 switch (t.Type)
                 {
                     case TokenType.Equals:
@@ -786,7 +784,7 @@ namespace Freesia
                         yield return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Operator, Value = t.Value };
                         break;
                     case TokenType.Symbol:
-                        foreach (var a in ParseSymbolType(t)) yield return a;
+                        pendingSymbols.Enqueue(t);
                         break;
                     case TokenType.String:
                         yield return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.String, Value = t.Value };
