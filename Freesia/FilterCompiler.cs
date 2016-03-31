@@ -699,7 +699,7 @@ namespace Freesia
             if (symbols.First().Value == argName)
             {
                 targetType = argType;
-                yield return new SyntaxInfo(symbols.Dequeue(), SyntaxType.Keyword);
+                yield return new SyntaxInfo(symbols.Dequeue(), SyntaxType.Keyword) { TypeInfo = targetType };
             }
             foreach (var prop in symbols)
             {
