@@ -858,7 +858,7 @@ namespace Freesia
                 // Symbolが含まれないときはStatusのプロパティ
                 return typeof(T).GetRuntimeProperties()
                     .Select(p => p.Name)
-                    .Concat(new[] { UserFunctionNamespace })
+                    .Concat(string.IsNullOrEmpty(UserFunctionNamespace) ? Enumerable.Empty<string>() : new[] { UserFunctionNamespace })
                     .Select(s => s.ToLowerInvariant())
                     .OrderBy(s => s);
             }
@@ -884,12 +884,12 @@ namespace Freesia
                     continue;
                 }
                 if (indexer > 0) { continue; }
-                if (type == typeof (T) && s.Value.ToLowerInvariant() == UserFunctionNamespace.ToLowerInvariant())
+                if (type == typeof(T) && s.Value.ToLowerInvariant() == UserFunctionNamespace?.ToLowerInvariant())
                 {
-                    type = typeof (UserFunctionTypePlaceholder);
+                    type = typeof(UserFunctionTypePlaceholder);
                     continue;
                 }
-                if (type == typeof (UserFunctionTypePlaceholder))
+                if (type == typeof(UserFunctionTypePlaceholder))
                 {
                     return new List<string>();
                 }
