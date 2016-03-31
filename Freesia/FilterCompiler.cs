@@ -925,14 +925,14 @@ namespace Freesia
             prefix = "";
             if (text.EndsWith("'") || text.EndsWith("\"")) return new List<string>();
             var last = q.FirstOrDefault();
+            // 末尾が文字列なら空
+            if (syntax.LastOrDefault()?.Type == SyntaxType.String) return new List<string>();
             // 末尾がnullならtypeof(T)のプロパティ
             if (last == null) return typeof(T).GetRuntimeProperties()
                  .Select(p => p.Name)
                  .Concat(string.IsNullOrEmpty(UserFunctionNamespace) ? Enumerable.Empty<string>() : new[] { UserFunctionNamespace })
                  .Select(s => s.ToLowerInvariant())
                  .OrderBy(s => s);
-            // 末尾が文字列なら空
-            if (last.Type == SyntaxType.String) return new List<string>();
             // 末尾が '[', ']' なら空
             if (last.SubType == TokenType.IndexerStart) return new List<string>();
             if (last.SubType == TokenType.IndexerEnd) return new List<string>();
