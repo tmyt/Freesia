@@ -885,6 +885,15 @@ namespace Freesia
                     continue;
                 }
                 if (indexer > 0) { continue; }
+                if (type == typeof (T) && s.Value.ToLowerInvariant() == UserFunctionNamespace.ToLowerInvariant())
+                {
+                    type = typeof (UserFunctionTypePlaceholder);
+                    continue;
+                }
+                if (type == typeof (UserFunctionTypePlaceholder))
+                {
+                    return new List<string>();
+                }
                 type = GetPreferredPropertyType(type, s.Value).PropertyType;
                 if (type == null) return new List<string>();
                 if (Nullable.GetUnderlyingType(type) != null)
@@ -902,24 +911,6 @@ namespace Freesia
                 .Select(s => s.ToLowerInvariant())
                 .Where(n => n.StartsWith(pp))
                 .OrderBy(s => s);
-        }
-
-        private static IEnumerable<SyntaxInfo> ConcatiateSyntax(IEnumerable<SyntaxInfo> syntaxInfos)
-        {
-            var list = new List<SyntaxInfo>();
-            foreach (var info in syntaxInfos)
-            {
-                if (info.Type == SyntaxType.ArrayArgs)
-                {
-                    list.Last().Length += info.Length;
-                    list.Last().Value += info.Value;
-                }
-                else
-                {
-                    list.Add(info);
-                }
-            }
-            return list;
         }
     }
 }
