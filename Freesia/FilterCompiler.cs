@@ -846,7 +846,6 @@ namespace Freesia
 
         public static IEnumerable<string> Completion(string text, out string prefix)
         {
-            var f = new FilterCompiler<T>();
             var c = new Tokenizer(text);
             var syntax = SyntaxHighlight(c.Parse(true)).ToArray();
             var q = TakeSymbolsForCompletion(syntax).ToList();
