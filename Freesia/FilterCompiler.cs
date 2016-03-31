@@ -746,6 +746,20 @@ namespace Freesia
             }
         }
 
+        private static IEnumerable<SyntaxInfo> TakeSymbolsForCompletion(IEnumerable<SyntaxInfo> list)
+        {
+            var indexer = 0;
+            foreach (var a in Enumerable.Reverse(list))
+            {
+                if (a.SubType == TokenType.IndexerStart) { indexer--; yield return a; }
+                else if (a.SubType == TokenType.IndexerEnd) { indexer++; yield return a; }
+                else if (a.SubType == TokenType.Symbol) yield return a;
+                else if (a.SubType == TokenType.PropertyAccess) yield return a;
+                else if (indexer > 0) yield return a;
+                else yield break;
+            }
+        }
+
         public static IEnumerable<CompilerToken> Parse(string text)
         {
             var c = new Tokenizer(text);
@@ -829,16 +843,13 @@ namespace Freesia
             var c = new Tokenizer(text);
             return SyntaxHighlight(c.Parse(true));
         }
-        
+
         public static IEnumerable<string> Completion(string text, out string prefix)
         {
             var f = new FilterCompiler<T>();
             var c = new Tokenizer(text);
             var syntax = SyntaxHighlight(c.Parse(true)).ToArray();
-            var q = syntax.Reverse()
-                    .TakeWhile(t => t.SubType == TokenType.Symbol || t.SubType == TokenType.PropertyAccess)
-                    .SkipWhile(t => string.IsNullOrWhiteSpace(t.Value))
-                    .ToList();
+            var q = TakeSymbolsForCompletion(syntax).ToList();
             prefix = "";
             if (text.EndsWith("'") || text.EndsWith("\"")) return new List<string>();
             if (q.Count == 0)
@@ -852,34 +863,42 @@ namespace Freesia
                     .Select(s => s.ToLowerInvariant())
                     .OrderBy(s => s);
             }
+            // 末尾が '[', ']' なら空
+            if (q[0].SubType == TokenType.IndexerStart) return new List<string>();
+            if (q[0].SubType == TokenType.IndexerEnd) return new List<string>();
             // 最後が '.' ならプロパティを見る
             var lookup = q[0].SubType == TokenType.PropertyAccess;
             q = q.Where(t => t.SubType != TokenType.PropertyAccess).ToList();
             // 2個以上エラーは空
             if (q.Count(t => t.Type == SyntaxType.Error) > 1) return new List<string>();
             // 型を検索する
-            // 先頭がエラーなので2個目以降をくっつける
-            var tokenList = ConcatiateSyntax(q.Skip(lookup ? 0 : 1).Reverse().ToList());
-            var symbol = string.Join(".", tokenList.Select(t => t.Value));
-            // 絞り込み文字列
-            prefix = lookup ? "" : q[0].Value;
-            // 型情報を検索
-            var targetType = string.IsNullOrEmpty(symbol) ? typeof(T) : f.GetSymbolType(new CompilerToken
+            var type = typeof(T);
+            var indexer = 0;
+            foreach (var s in Enumerable.Reverse(q))
             {
-                Length = symbol.Length,
-                Position = 0,
-                Type = TokenType.Symbol,
-                Value = symbol
-            });
-            // 型が見つからないときは空
-            if (targetType == null) return new List<string>();
+                if (s.Type == SyntaxType.Error) continue;
+                if (s.SubType == TokenType.IndexerStart) { indexer++; continue; }
+                if (s.SubType == TokenType.IndexerEnd)
+                {
+                    indexer--;
+                    type = type.GetElementType();
+                    continue;
+                }
+                if (indexer > 0) { continue; }
+                type = GetPreferredPropertyType(type, s.Value).PropertyType;
+                if (type == null) return new List<string>();
+                if (Nullable.GetUnderlyingType(type) != null)
+                    type = Nullable.GetUnderlyingType(type);
+            }
+            if (indexer > 0) return new List<string>();
+            // 絞り込み文字列
+            var pp = prefix = lookup ? "" : q[0].Value;
             // プロパティ一覧を返却
-            var pp = prefix;
-            return targetType.GetRuntimeProperties()
+            return type.GetRuntimeProperties()
                 .Select(p => p.Name)
-                .Concat(targetType == typeof(T) && !string.IsNullOrEmpty(UserFunctionNamespace) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
-                .Concat(targetType == typeof(UserFunctionTypePlaceholder) ? Functions.Keys : Enumerable.Empty<string>())
-                .Concat(targetType.IsEnumerable() ? new[] { "contains" } : Enumerable.Empty<string>())
+                .Concat(type == typeof(T) && !string.IsNullOrEmpty(UserFunctionNamespace) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
+                .Concat(type == typeof(UserFunctionTypePlaceholder) ? Functions.Keys : Enumerable.Empty<string>())
+                .Concat(type.IsEnumerable() ? new[] { "contains" } : Enumerable.Empty<string>())
                 .Select(s => s.ToLowerInvariant())
                 .Where(n => n.StartsWith(pp))
                 .OrderBy(s => s);
