@@ -774,9 +774,19 @@ namespace Freesia
 
         public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<CompilerToken> tokenList)
         {
-            Queue<CompilerToken> pendingSymbols = new Queue<CompilerToken>();
+            var pendingSymbols = new Queue<CompilerToken>();
+            bool lambdaParsing = false;
             foreach (var t in tokenList)
             {
+                // enter Lambda parsing mode
+                if (t.Type == TokenType.Lambda)
+                {
+                    lambdaParsing = true;
+                    yield return new SyntaxInfo(pendingSymbols.Dequeue(), SyntaxType.Keyword);
+                    yield return new SyntaxInfo(t, SyntaxType.Operator);
+                    pendingSymbols.Clear();
+                    continue;
+                }
                 if (t.Type != TokenType.Symbol && t.Type != TokenType.PropertyAccess)
                 {
                     foreach (var a in ParseSymbolType(pendingSymbols)) yield return a;

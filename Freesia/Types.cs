@@ -10,6 +10,17 @@ namespace Freesia.Types
         public int Position { get; set; }
         public int Length { get; set; }
 
+        public SyntaxInfo() { }
+
+        public SyntaxInfo(CompilerToken token, SyntaxType type)
+        {
+            this.Type = type;
+            this.SubType = token.Type;
+            this.Value = token.Value;
+            this.Position = token.Position;
+            this.Length = token.Length;
+        }
+
         public override string ToString()
         {
             return $"{Type}: {Value}";

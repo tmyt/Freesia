@@ -342,8 +342,9 @@ namespace FreesiaTest
             Assert.AreEqual(info[7].Type, SyntaxType.Operator);    // .
             Assert.AreEqual(info[8].Type, SyntaxType.Identifier);  // contains
             Assert.AreEqual(info[9].Type, SyntaxType.Operator);    // (
-            Assert.AreEqual(info[10].Type, SyntaxType.Error);       // x
-            Assert.AreEqual(info[11].Type, SyntaxType.Operator);    // =>
+            Assert.AreEqual(info[10].Type, SyntaxType.Keyword);    // x
+            Assert.AreEqual(info[11].Type, SyntaxType.Operator);   // =>
+            // TODO: Parse lambda argument correctly
             Assert.AreEqual(info[12].Type, SyntaxType.Error);      // x
             Assert.AreEqual(info[13].Type, SyntaxType.Operator);   // =@i
             Assert.AreEqual(info[14].Type, SyntaxType.String);     // 'aa'
