@@ -330,6 +330,8 @@ namespace FreesiaTest
             //FilterCompiler<TestClass>.SyntaxHighlight(syntax);
             //FilterCompiler<TestClass>.ParseForSyntaxHightlight(AllOpsScript);
             //FilterCompiler<TestClass>.ParseForSyntaxHightlight("true false user 1 2 3 'a' == !a || b[1] || {true, false, null} text user.func text.length").ToArray();
+            var infoa = FilterCompiler<TestClass>.ParseForSyntaxHightlight(
+                "ints[0].contains(x => x =@i 'aa')").ToArray();
             var info = FilterCompiler<TestClass>.ParseForSyntaxHightlight(
                 "user.func == false && ints.contains(x => x =@i 'aa') && favorited != true || testclass2.s == 'bbb' && id >= 10").ToArray();
             Assert.AreEqual(info[0].Type, SyntaxType.Identifier);  // user
@@ -344,8 +346,7 @@ namespace FreesiaTest
             Assert.AreEqual(info[9].Type, SyntaxType.Operator);    // (
             Assert.AreEqual(info[10].Type, SyntaxType.Keyword);    // x
             Assert.AreEqual(info[11].Type, SyntaxType.Operator);   // =>
-            // TODO: Parse lambda argument correctly
-            Assert.AreEqual(info[12].Type, SyntaxType.Error);      // x
+            Assert.AreEqual(info[12].Type, SyntaxType.Keyword);    // x
             Assert.AreEqual(info[13].Type, SyntaxType.Operator);   // =@i
             Assert.AreEqual(info[14].Type, SyntaxType.String);     // 'aa'
             Assert.AreEqual(info[15].Type, SyntaxType.Operator);   // )

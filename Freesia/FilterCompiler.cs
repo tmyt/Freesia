@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Freesia.Internal;
 using Freesia.Internal.Extensions;
 using Freesia.Internal.Reflection;
@@ -687,24 +688,49 @@ namespace Freesia
             return targetType?.GetRuntimeProperties().FirstOrDefault(p => p.Name.ToLowerInvariant() == propname.ToLowerInvariant());
         }
 
-        private static IEnumerable<SyntaxInfo> ParseSymbolType(Queue<CompilerToken> symbols)
+        private static IEnumerable<SyntaxInfo> ParseSymbolType(Queue<CompilerToken> symbols, Type argType, string argName)
         {
             var statusType = typeof(T);
             var targetType = statusType;
+            var indexer = 0;
+            // yield break for no symbols
+            if (symbols.Count == 0) yield break;
+            // lambda argument
+            if (symbols.First().Value == argName)
+            {
+                targetType = argType;
+                yield return new SyntaxInfo(symbols.Dequeue(), SyntaxType.Keyword);
+            }
             foreach (var prop in symbols)
             {
                 var propname = prop.Value;
                 var syntaxType = default(SyntaxType);
                 if (prop.Type == TokenType.PropertyAccess)
                 {
-                    yield return new SyntaxInfo
+                    yield return new SyntaxInfo(prop, SyntaxType.Operator) { Value = "." };
+                    continue;
+                }
+                if (prop.Type == TokenType.IndexerStart)
+                {
+                    indexer++;
+                    yield return TranslateSyntaxInfo(prop);
+                    continue;
+                }
+                if (prop.Type == TokenType.IndexerEnd)
+                {
+                    indexer--;
+                    var s = TranslateSyntaxInfo(prop);
+                    if (indexer == 0)
                     {
-                        Position = prop.Position,
-                        Length = prop.Length,
-                        SubType = TokenType.PropertyAccess,
-                        Type = SyntaxType.Operator,
-                        Value = "."
-                    };
+                        s.TypeInfo = targetType.GetElementType();
+                        targetType = s.TypeInfo;
+                    }
+                    yield return s;
+                    continue;
+                }
+                if (indexer > 0)
+                {
+                    yield return TranslateSyntaxInfo(prop);
                     continue;
                 }
                 if (propname.ToLowerInvariant() == UserFunctionNamespace && targetType == typeof(T))
@@ -733,29 +759,78 @@ namespace Freesia
                         targetType = propInfo?.PropertyType;
                     }
                 }
-                yield return new SyntaxInfo
-                {
-                    Position = prop.Position,
-                    Length = prop.Length,
-                    SubType = TokenType.Symbol,
-                    Type = syntaxType,
-                    Value = propname
-                };
+                yield return new SyntaxInfo(prop, syntaxType) { TypeInfo = targetType };
                 if (syntaxType == SyntaxType.Error) yield break;
+            }
+        }
+
+        private static IEnumerable<CompilerToken> TakeSymbols(IEnumerator<CompilerToken> list)
+        {
+            var indexer = 0;
+            while (list.MoveNext())
+            {
+                var a = list.Current;
+                if (a.Type == TokenType.IndexerStart) { indexer++; yield return a; }
+                else if (a.Type == TokenType.IndexerEnd) { indexer--; yield return a; }
+                else if (a.Type == TokenType.Symbol) yield return a;
+                else if (a.Type == TokenType.PropertyAccess) yield return a;
+                else if (indexer > 0) yield return a;
+                else yield break;
             }
         }
 
         private static IEnumerable<SyntaxInfo> TakeSymbolsForCompletion(IEnumerable<SyntaxInfo> list)
         {
             var indexer = 0;
-            foreach (var a in Enumerable.Reverse(list))
+            foreach (var a in list)
             {
-                if (a.SubType == TokenType.IndexerStart) { indexer--; yield return a; }
-                else if (a.SubType == TokenType.IndexerEnd) { indexer++; yield return a; }
+                if (a.SubType == TokenType.IndexerStart) { indexer++; yield return a; }
+                else if (a.SubType == TokenType.IndexerEnd) { indexer--; yield return a; }
                 else if (a.SubType == TokenType.Symbol) yield return a;
                 else if (a.SubType == TokenType.PropertyAccess) yield return a;
                 else if (indexer > 0) yield return a;
                 else yield break;
+            }
+        }
+
+        private static SyntaxInfo TranslateSyntaxInfo(CompilerToken t)
+        {
+            switch (t.Type)
+            {
+                case TokenType.Equals:
+                case TokenType.EqualsI:
+                case TokenType.NotEquals:
+                case TokenType.NotEqualsI:
+                case TokenType.Regexp:
+                case TokenType.Contains:
+                case TokenType.ContainsI:
+                case TokenType.And:
+                case TokenType.Or:
+                case TokenType.Not:
+                case TokenType.LessThan:
+                case TokenType.GreaterThan:
+                case TokenType.LessThanEquals:
+                case TokenType.GreaterThanEquals:
+                case TokenType.OpenBracket:
+                case TokenType.CloseBracket:
+                case TokenType.ArrayStart:
+                case TokenType.ArrayEnd:
+                case TokenType.ArrayDelimiter:
+                case TokenType.IndexerStart:
+                case TokenType.IndexerEnd:
+                case TokenType.Lambda:
+                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Operator, Value = t.Value };
+                case TokenType.String:
+                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.String, Value = t.Value };
+                case TokenType.Double:
+                case TokenType.Long:
+                case TokenType.ULong:
+                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Constant, Value = t.Value };
+                case TokenType.Bool:
+                case TokenType.Null:
+                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Keyword, Value = t.Value };
+                default:
+                    throw new ParseException("#-1", t.Position);
             }
         }
 
@@ -775,69 +850,58 @@ namespace Freesia
         public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<CompilerToken> tokenList)
         {
             var pendingSymbols = new Queue<CompilerToken>();
-            bool lambdaParsing = false;
-            foreach (var t in tokenList)
+            var lambdaParsing = false;
+            var brackets = 0;
+            var argname = default(string);
+            var argtype = default(Type);
+            var latestResolvedType = default(Type);
+            var enumerator = tokenList.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                var t = enumerator.Current;
+                // read symbols
+                if (t.Type == TokenType.Symbol || t.Type == TokenType.PropertyAccess)
+                {
+                    pendingSymbols.Enqueue(t);
+                    foreach (var s in TakeSymbols(enumerator)) pendingSymbols.Enqueue(s);
+                    t = enumerator.Current;
+                }
                 // enter Lambda parsing mode
                 if (t.Type == TokenType.Lambda)
                 {
                     lambdaParsing = true;
-                    yield return new SyntaxInfo(pendingSymbols.Dequeue(), SyntaxType.Keyword);
+                    brackets = 1;
+                    var arg = pendingSymbols.Dequeue();
+                    yield return new SyntaxInfo(arg, SyntaxType.Keyword);
                     yield return new SyntaxInfo(t, SyntaxType.Operator);
+                    argname = arg.Value;
+                    argtype = latestResolvedType?.GetElementType();
                     pendingSymbols.Clear();
                     continue;
                 }
-                if (t.Type != TokenType.Symbol && t.Type != TokenType.PropertyAccess)
+                if (lambdaParsing)
                 {
-                    foreach (var a in ParseSymbolType(pendingSymbols)) yield return a;
+                    if (t.Type == TokenType.OpenBracket) { brackets++; }
+                    if (t.Type == TokenType.CloseBracket) { brackets--; }
+                    if (brackets == 0) { lambdaParsing = false; argname = null; }
+                }
+                if (pendingSymbols.Count > 0)
+                {
+                    foreach (var a in ParseSymbolType(pendingSymbols, argtype, argname))
+                    {
+                        if (a.TypeInfo != null) latestResolvedType = a.TypeInfo;
+                        yield return a;
+                    }
                     pendingSymbols.Clear();
                 }
-                switch (t.Type)
+                // process rest of token
+                if (t.Type != TokenType.Symbol && t.Type != TokenType.PropertyAccess)
                 {
-                    case TokenType.Equals:
-                    case TokenType.EqualsI:
-                    case TokenType.NotEquals:
-                    case TokenType.NotEqualsI:
-                    case TokenType.Regexp:
-                    case TokenType.Contains:
-                    case TokenType.ContainsI:
-                    case TokenType.And:
-                    case TokenType.Or:
-                    case TokenType.Not:
-                    case TokenType.LessThan:
-                    case TokenType.GreaterThan:
-                    case TokenType.LessThanEquals:
-                    case TokenType.GreaterThanEquals:
-                    case TokenType.OpenBracket:
-                    case TokenType.CloseBracket:
-                    case TokenType.ArrayStart:
-                    case TokenType.ArrayEnd:
-                    case TokenType.ArrayDelimiter:
-                    case TokenType.IndexerStart:
-                    case TokenType.IndexerEnd:
-                    case TokenType.Lambda:
-                        yield return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Operator, Value = t.Value };
-                        break;
-                    case TokenType.Symbol:
-                    case TokenType.PropertyAccess:
-                        pendingSymbols.Enqueue(t);
-                        break;
-                    case TokenType.String:
-                        yield return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.String, Value = t.Value };
-                        break;
-                    case TokenType.Double:
-                    case TokenType.Long:
-                    case TokenType.ULong:
-                        yield return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Constant, Value = t.Value };
-                        break;
-                    case TokenType.Bool:
-                    case TokenType.Null:
-                        yield return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Keyword, Value = t.Value };
-                        break;
+                    yield return TranslateSyntaxInfo(t);
                 }
             }
             // 残ってたら全部出す
-            foreach (var a in ParseSymbolType(pendingSymbols)) yield return a;
+            foreach (var a in ParseSymbolType(pendingSymbols, argtype, argname)) yield return a;
         }
 
         public static Func<T, bool> Compile(string text)
@@ -857,61 +921,36 @@ namespace Freesia
         {
             var c = new Tokenizer(text);
             var syntax = SyntaxHighlight(c.Parse(true)).ToArray();
-            var q = TakeSymbolsForCompletion(syntax).ToList();
+            var q = TakeSymbolsForCompletion(syntax.Reverse()).ToList();
             prefix = "";
             if (text.EndsWith("'") || text.EndsWith("\"")) return new List<string>();
-            if (q.Count == 0)
-            {
-                var last = syntax.LastOrDefault();
-                if (last != null && last.Type == SyntaxType.String) return new List<string>();
-                // Symbolが含まれないときはStatusのプロパティ
-                return typeof(T).GetRuntimeProperties()
-                    .Select(p => p.Name)
-                    .Concat(string.IsNullOrEmpty(UserFunctionNamespace) ? Enumerable.Empty<string>() : new[] { UserFunctionNamespace })
-                    .Select(s => s.ToLowerInvariant())
-                    .OrderBy(s => s);
-            }
+            var last = q.FirstOrDefault();
+            // 末尾がnullならtypeof(T)のプロパティ
+            if (last == null) return typeof(T).GetRuntimeProperties()
+                 .Select(p => p.Name)
+                 .Concat(string.IsNullOrEmpty(UserFunctionNamespace) ? Enumerable.Empty<string>() : new[] { UserFunctionNamespace })
+                 .Select(s => s.ToLowerInvariant())
+                 .OrderBy(s => s);
+            // 末尾が文字列なら空
+            if (last.Type == SyntaxType.String) return new List<string>();
             // 末尾が '[', ']' なら空
-            if (q[0].SubType == TokenType.IndexerStart) return new List<string>();
-            if (q[0].SubType == TokenType.IndexerEnd) return new List<string>();
+            if (last.SubType == TokenType.IndexerStart) return new List<string>();
+            if (last.SubType == TokenType.IndexerEnd) return new List<string>();
             // 最後が '.' ならプロパティを見る
-            var lookup = q[0].SubType == TokenType.PropertyAccess;
-            q = q.Where(t => t.SubType != TokenType.PropertyAccess).ToList();
+            var lookup = last.SubType == TokenType.PropertyAccess;
+            var type = default(Type);
+            if (last.SubType == TokenType.PropertyAccess)
+            {
+                type = q.Skip(1).FirstOrDefault()?.TypeInfo;
+            }
+            // 末尾がエラーなら直前の要素
+            if (last.Type == SyntaxType.Error)
+            {
+                type = q.Count > 2 ? q.Skip(2).FirstOrDefault()?.TypeInfo : typeof(T);
+            }
             // 2個以上エラーは空
             if (q.Count(t => t.Type == SyntaxType.Error) > 1) return new List<string>();
-            // 型を検索する
-            var type = typeof(T);
-            var indexer = 0;
-            foreach (var s in Enumerable.Reverse(q))
-            {
-                if (s.Type == SyntaxType.Error) continue;
-                if (s.SubType == TokenType.IndexerStart) { indexer++; continue; }
-                if (s.SubType == TokenType.IndexerEnd)
-                {
-                    indexer--;
-                    type = type.GetElementType();
-                    continue;
-                }
-                if (indexer > 0) { continue; }
-                if (type == typeof(T) && s.Value.ToLowerInvariant() == UserFunctionNamespace?.ToLowerInvariant())
-                {
-                    type = typeof(UserFunctionTypePlaceholder);
-                    continue;
-                }
-                if (type == typeof(UserFunctionTypePlaceholder))
-                {
-                    return new List<string>();
-                }
-                if (type.IsEnumerable() && ExtensionMethods.Methods.ContainsKey(s.Value.ToLowerInvariant()))
-                {
-                    return new List<string>();
-                }
-                type = GetPreferredPropertyType(type, s.Value).PropertyType;
-                if (type == null) return new List<string>();
-                if (Nullable.GetUnderlyingType(type) != null)
-                    type = Nullable.GetUnderlyingType(type);
-            }
-            if (indexer > 0) return new List<string>();
+            if (type == null) return new List<string>();
             // 絞り込み文字列
             var pp = prefix = lookup ? "" : q[0].Value;
             // プロパティ一覧を返却

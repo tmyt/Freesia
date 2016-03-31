@@ -1,4 +1,5 @@
-﻿using Freesia.Internal.Types;
+﻿using System;
+using Freesia.Internal.Types;
 
 namespace Freesia.Types
 {
@@ -9,6 +10,7 @@ namespace Freesia.Types
         public string Value { get; set; }
         public int Position { get; set; }
         public int Length { get; set; }
+        public Type TypeInfo { get; set; }
 
         public SyntaxInfo() { }
 
