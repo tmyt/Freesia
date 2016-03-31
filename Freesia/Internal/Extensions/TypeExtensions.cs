@@ -7,7 +7,7 @@ namespace Freesia.Internal.Extensions
 {
     internal static class TypeExtensions
     {
-        public static bool IsEnmerable(this Type type)
+        public static bool IsEnumerable(this Type type)
         {
             return type.GetUnderlyingEnumerableType() != null;
         }

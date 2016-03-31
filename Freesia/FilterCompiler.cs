@@ -721,7 +721,7 @@ namespace Freesia
                 {
                     var propInfo = GetPreferredPropertyType(targetType, propname);
                     syntaxType = propInfo == null ? SyntaxType.Error : SyntaxType.Identifier;
-                    if (targetType?.IsEnmerable() ?? false)
+                    if (targetType?.IsEnumerable() ?? false)
                     {
                         // TODO: Currently only supports 'contains'
                         syntaxType = prop.Value.ToLowerInvariant() == "contains"
@@ -829,7 +829,7 @@ namespace Freesia
             var c = new Tokenizer(text);
             return SyntaxHighlight(c.Parse(true));
         }
-
+        
         public static IEnumerable<string> Completion(string text, out string prefix)
         {
             var f = new FilterCompiler<T>();
@@ -879,6 +879,7 @@ namespace Freesia
                 .Select(p => p.Name)
                 .Concat(targetType == typeof(T) && !string.IsNullOrEmpty(UserFunctionNamespace) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
                 .Concat(targetType == typeof(UserFunctionTypePlaceholder) ? Functions.Keys : Enumerable.Empty<string>())
+                .Concat(targetType.IsEnumerable() ? new[] { "contains" } : Enumerable.Empty<string>())
                 .Select(s => s.ToLowerInvariant())
                 .Where(n => n.StartsWith(pp))
                 .OrderBy(s => s);
