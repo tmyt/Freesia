@@ -418,7 +418,7 @@ namespace Freesia
             switch (methodName)
             {
                 case "contains":
-                    method = (MethodInfo)Cache.EnumerableAny.Value.MakeGenericMethod(argType).Invoke(null, new object[0]);
+                    method = ExtensionMethods.Methods[methodName](new[] { argType });
                     break;
                 default:
                     throw new ParseException($"Method {lhs.Right.Token.Value} is not supported.", lhs.Right.Token.Position);
@@ -707,7 +707,7 @@ namespace Freesia
                     };
                     continue;
                 }
-                if (propname.ToLowerInvariant() == UserFunctionNamespace && symbols.First() == prop)
+                if (propname.ToLowerInvariant() == UserFunctionNamespace && targetType == typeof(T))
                 {
                     syntaxType = SyntaxType.Identifier;
                     targetType = typeof(UserFunctionTypePlaceholder);
@@ -721,10 +721,9 @@ namespace Freesia
                 {
                     var propInfo = GetPreferredPropertyType(targetType, propname);
                     syntaxType = propInfo == null ? SyntaxType.Error : SyntaxType.Identifier;
-                    if (targetType?.IsEnumerable() ?? false)
+                    if (syntaxType == SyntaxType.Error && (targetType?.IsEnumerable() ?? false))
                     {
-                        // TODO: Currently only supports 'contains'
-                        syntaxType = prop.Value.ToLowerInvariant() == "contains"
+                        syntaxType = ExtensionMethods.Methods.ContainsKey(prop.Value.ToLowerInvariant())
                             ? SyntaxType.Identifier
                             : SyntaxType.Error;
                         targetType = null;
@@ -893,6 +892,10 @@ namespace Freesia
                 {
                     return new List<string>();
                 }
+                if (type.IsEnumerable() && ExtensionMethods.Methods.ContainsKey(s.Value.ToLowerInvariant()))
+                {
+                    return new List<string>();
+                }
                 type = GetPreferredPropertyType(type, s.Value).PropertyType;
                 if (type == null) return new List<string>();
                 if (Nullable.GetUnderlyingType(type) != null)
@@ -906,7 +909,7 @@ namespace Freesia
                 .Select(p => p.Name)
                 .Concat(type == typeof(T) && !string.IsNullOrEmpty(UserFunctionNamespace) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
                 .Concat(type == typeof(UserFunctionTypePlaceholder) ? Functions.Keys : Enumerable.Empty<string>())
-                .Concat(type.IsEnumerable() ? new[] { "contains" } : Enumerable.Empty<string>())
+                .Concat(type.IsEnumerable() ? ExtensionMethods.Methods.Keys : Enumerable.Empty<string>())
                 .Select(s => s.ToLowerInvariant())
                 .Where(n => n.StartsWith(pp))
                 .OrderBy(s => s);

@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
+using Freesia.Internal.Reflection;
 using Freesia.Types;
 
 namespace Freesia.Internal.Types
@@ -17,7 +20,7 @@ namespace Freesia.Internal.Types
 
         internal string Dump()
         {
-            return $"({Left?.Dump()} {Token} {Right?.Dump()})";
+            return $"<{Left?.Dump()} {Token} {Right?.Dump()}>";
         }
     }
     
@@ -78,4 +81,11 @@ namespace Freesia.Internal.Types
         };
     }
 
+    internal static class ExtensionMethods
+    {
+        public static Dictionary<string, Func<Type[], MethodInfo>> Methods = new Dictionary<string, Func<Type[], MethodInfo>>
+        {
+            { "contains", types => (MethodInfo)Cache.EnumerableAny.Value.MakeGenericMethod(types).Invoke(null, new object[0]) }
+        }; 
+    }
 }
