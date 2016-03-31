@@ -160,13 +160,13 @@ namespace Freesia.Internal
                                 break;
                             case '=':
                                 if (LexChars('i') == 'i')
-                                    yield return new CompilerToken { Type = TokenType.EqualsI, Position = start, Length = 2 };
+                                    yield return new CompilerToken { Type = TokenType.EqualsI, Position = start, Length = 3 };
                                 else
                                     yield return new CompilerToken { Type = TokenType.Equals, Position = start, Length = 2 };
                                 break;
                             case '@':
                                 if (LexChars('i') == 'i')
-                                    yield return new CompilerToken { Type = TokenType.ContainsI, Position = start, Length = 2 };
+                                    yield return new CompilerToken { Type = TokenType.ContainsI, Position = start, Length = 3 };
                                 else
                                     yield return new CompilerToken { Type = TokenType.Contains, Position = start, Length = 2 };
                                 break;
