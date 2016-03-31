@@ -38,7 +38,7 @@ namespace Freesia.Internal
                 // enter Array parsing
                 if (token.Type == TokenType.ArrayStart) inArray = true;
                 // correct token
-                if (token.IsSymbol() || token.Type == TokenType.ArrayStart || token.Type == TokenType.IndexerStart)
+                if (token.IsSymbol|| token.Type == TokenType.ArrayStart || token.Type == TokenType.IndexerStart)
                 {
                     values.Push(new ASTNode(token));
                     continue;

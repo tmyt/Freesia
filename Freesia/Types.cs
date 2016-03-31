@@ -28,31 +28,22 @@ namespace Freesia.Types
             return $"{Type}: {Value}";
         }
 
-        public bool IsOperator()
-        {
-            return Operators.Priority.ContainsKey(this.Type);
-        }
+        public bool IsOperator => Operators.Priority.ContainsKey(this.Type);
 
-        public bool IsSymbol()
-        {
-            return this.Type == TokenType.Symbol
-                   || this.Type == TokenType.String
-                   || this.Type == TokenType.Double
-                   || this.Type == TokenType.Long
-                   || this.Type == TokenType.ULong
-                   || this.Type == TokenType.Bool
-                   || this.Type == TokenType.Null;
-        }
+        public bool IsSymbol => this.Type == TokenType.Symbol
+                                || this.Type == TokenType.String
+                                || this.Type == TokenType.Double
+                                || this.Type == TokenType.Long
+                                || this.Type == TokenType.ULong
+                                || this.Type == TokenType.Bool
+                                || this.Type == TokenType.Null;
 
-        public bool IsConstant()
-        {
-            return this.Type == TokenType.String
-                   || this.Type == TokenType.Double
-                   || this.Type == TokenType.Long
-                   || this.Type == TokenType.ULong
-                   || this.Type == TokenType.Bool
-                   || this.Type == TokenType.Null;
-        }
+        public bool IsConstant => this.Type == TokenType.String
+                                  || this.Type == TokenType.Double
+                                  || this.Type == TokenType.Long
+                                  || this.Type == TokenType.ULong
+                                  || this.Type == TokenType.Bool
+                                  || this.Type == TokenType.Null;
     }
 
     public enum SyntaxType

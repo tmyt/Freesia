@@ -59,7 +59,7 @@ namespace Freesia
             {
                 return MakeIndexerExpression(ast.Left, ast.Right);
             }
-            if (!ast.Token.IsOperator())
+            if (!ast.Token.IsOperator)
             {
                 return ast.Token;
             }
@@ -379,7 +379,7 @@ namespace Freesia
             var expr = lhs as Expression ?? MakePropertyAccess((CompilerToken)lhs);
             var valueExpr = MakeNullableAccessExpression(expr);
             var leftType = valueExpr.Type;
-            if (!rhs.IsSymbol()) throw new ParseException("Property accessor rhs should be Symbol.", rhs.Position);
+            if (!rhs.IsSymbol) throw new ParseException("Property accessor rhs should be Symbol.", rhs.Position);
             if (valueExpr.Type == typeof(UserFunctionTypePlaceholder))
             {
                 if (!Functions.ContainsKey(rhs.Value.ToLowerInvariant()))
