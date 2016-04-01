@@ -374,7 +374,7 @@ namespace Freesia
             }
             var propInfo = property.Type.GetRuntimeProperty("Item");
             if (propInfo == null)
-                throw new ParseException(String.Format("Property '{0}' is not indexed type.", prop.Token.Value), -1);
+                throw new ParseException($"Property '{prop.Token.Value}' is not indexed type.", -1);
             var e = Expression.Constant(Convert.ToInt32(i));
             return Expression.MakeIndex(property, propInfo, new[] { e });
         }
@@ -389,7 +389,7 @@ namespace Freesia
             if (valueExpr.Type == typeof(UserFunctionTypePlaceholder))
             {
                 if (!Functions.ContainsKey(rhs.Value.ToLowerInvariant()))
-                    throw new ParseException(String.Format("Property '{0}' is not found.", rhs.Value), -1);
+                    throw new ParseException($"Property '{rhs.Value}' is not found.", -1);
                 var func = Functions[rhs.Value.ToLowerInvariant()];
                 return Expression.Call(Expression.Constant(func),
                     func.GetType().GetRuntimeMethod("Invoke", new[] { typeof(T) }), _rootParameter);
@@ -651,7 +651,7 @@ namespace Freesia
             }
             var propInfo = targetType.GetPreferredPropertyType(propname);
             if (propInfo == null)
-                throw new ParseException(String.Format("Property '{0}' is not found.", t.Value), -1);
+                throw new ParseException($"Property '{t.Value}' is not found.", -1);
             targetExpression = Expression.MakeMemberAccess(targetExpression, propInfo);
             return targetExpression;
         }
@@ -667,7 +667,7 @@ namespace Freesia
             }
             var propInfo = typeof(T).GetPreferredPropertyType(propname);
             if (propInfo == null)
-                throw new ParseException(String.Format("Property '{0}' is not found.", t.Value), -1);
+                throw new ParseException($"Property '{t.Value}' is not found.", -1);
             return propInfo.PropertyType;
         }
 
