@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -148,7 +147,6 @@ namespace Freesia
             var trycatch = Expression.TryCatch(root,
                 Expression.Catch(typeof(Exception), Expression.Constant(false)));
             var expr = Expression.Lambda<Func<T, bool>>(trycatch, _rootParameter);
-            Debug.WriteLine(root);
             return expr.Compile();
         }
 
@@ -871,6 +869,7 @@ namespace Freesia
                 // enter Lambda parsing mode
                 if (t.Type == TokenType.Lambda)
                 {
+                    // save current state
                     if (lambdaParsing)
                     {
                         argstack.Push(Tuple.Create(argname, argtype, brackets));
