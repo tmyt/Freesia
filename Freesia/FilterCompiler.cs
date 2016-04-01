@@ -27,10 +27,8 @@ namespace Freesia
 
         public static string UserFunctionNamespace { get; set; }
 
-        internal FilterCompiler()
-        {
-        }
-        
+        internal FilterCompiler() { }
+
         private object CompileOne(ASTNode ast)
         {
             if (ast.Token.Type == TokenType.ArrayNode)
@@ -322,12 +320,12 @@ namespace Freesia
             while (o is MemberExpression)
             {
                 var expr = o as MemberExpression;
-                if(MayNullable(expr, false)) props.Enqueue(expr);
+                if (MayNullable(expr, false)) props.Enqueue(expr);
                 o = expr.Expression;
             }
             if (o is CompilerToken)
             {
-                if(MayNullable(o, false)) props.Enqueue(MakePropertyAccess((CompilerToken) o));
+                if (MayNullable(o, false)) props.Enqueue(MakePropertyAccess((CompilerToken)o));
             }
             foreach (var prop in props)
             {
@@ -440,6 +438,65 @@ namespace Freesia
             if (t is Expression) return (Expression)t;
             if (MayNullable(t)) t = MakeValidation(t);
             return MakeExpression(t);
+        }
+
+        private Expression MakeExpression(object o)
+        {
+            if (o is Expression) return (Expression)o;
+            if (o is CompilerToken)
+            {
+                var t = (CompilerToken)o;
+                switch (t.Type)
+                {
+                    case TokenType.Symbol:
+                        return MakeNullableAccessExpression(MakePropertyAccess(t));
+                    case TokenType.String:
+                        return Expression.Constant(t.Value);
+                    case TokenType.Double:
+                    case TokenType.Long:
+                    case TokenType.ULong:
+                    case TokenType.Bool:
+                    case TokenType.Null:
+                        return Expression.Constant(GetConstantValue(o));
+                }
+            }
+            throw new ArgumentException("Can't convert to Expression.");
+        }
+
+        private Expression MakeRegexExpression(Expression lhs, Expression rhs)
+        {
+            var ctor =
+                Expression.New(
+                    typeof(Regex).GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 2),
+                    rhs, Expression.Constant(RegexOptions.Singleline));
+            var regexObj = Expression.Parameter(typeof(Regex), "regex");
+            return Expression.Block(
+                new[] { regexObj },
+                Expression.Assign(regexObj, ctor),
+                Expression.Call(regexObj, Cache.RegexIsMatch.Value, lhs));
+        }
+
+        private Expression MakeContainsExpression(Expression lhs, Expression rhs)
+        {
+            return Expression.Call(lhs, Cache.StringContains.Value, rhs);
+        }
+
+        private Expression MakePropertyAccess(CompilerToken t)
+        {
+            if (t.Type != TokenType.Symbol) throw new ArgumentException("argument token is not symbol.");
+            if (_env.ContainsKey(t.Value)) return _env[t.Value];
+            var targetExpression = (Expression)_rootParameter;
+            var targetType = typeof(T);
+            var propname = t.Value;
+            if (propname == UserFunctionNamespace)
+            {
+                return Expression.Constant(null, typeof(UserFunctionTypePlaceholder));
+            }
+            var propInfo = targetType.GetPreferredPropertyType(propname);
+            if (propInfo == null)
+                throw new ParseException($"Property '{t.Value}' is not found.", -1);
+            targetExpression = Expression.MakeMemberAccess(targetExpression, propInfo);
+            return targetExpression;
         }
 
         private bool MayNullable(object o, bool checkRecursive = true)
@@ -595,65 +652,6 @@ namespace Freesia
                 }
             }
             throw new ArgumentException("Can't convert to Expression.");
-        }
-
-        private Expression MakeExpression(object o)
-        {
-            if (o is Expression) return (Expression)o;
-            if (o is CompilerToken)
-            {
-                var t = (CompilerToken)o;
-                switch (t.Type)
-                {
-                    case TokenType.Symbol:
-                        return MakeNullableAccessExpression(MakePropertyAccess(t));
-                    case TokenType.String:
-                        return Expression.Constant(t.Value);
-                    case TokenType.Double:
-                    case TokenType.Long:
-                    case TokenType.ULong:
-                    case TokenType.Bool:
-                    case TokenType.Null:
-                        return Expression.Constant(GetConstantValue(o));
-                }
-            }
-            throw new ArgumentException("Can't convert to Expression.");
-        }
-
-        private Expression MakeRegexExpression(Expression lhs, Expression rhs)
-        {
-            var ctor =
-                Expression.New(
-                    typeof(Regex).GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 2),
-                    rhs, Expression.Constant(RegexOptions.Singleline));
-            var regexObj = Expression.Parameter(typeof(Regex), "regex");
-            return Expression.Block(
-                new[] { regexObj },
-                Expression.Assign(regexObj, ctor),
-                Expression.Call(regexObj, Cache.RegexIsMatch.Value, lhs));
-        }
-
-        private Expression MakeContainsExpression(Expression lhs, Expression rhs)
-        {
-            return Expression.Call(lhs, Cache.StringContains.Value, rhs);
-        }
-
-        private Expression MakePropertyAccess(CompilerToken t)
-        {
-            if (t.Type != TokenType.Symbol) throw new ArgumentException("argument token is not symbol.");
-            if (_env.ContainsKey(t.Value)) return _env[t.Value];
-            var targetExpression = (Expression)_rootParameter;
-            var targetType = typeof(T);
-            var propname = t.Value;
-            if (propname == UserFunctionNamespace)
-            {
-                return Expression.Constant(null, typeof(UserFunctionTypePlaceholder));
-            }
-            var propInfo = targetType.GetPreferredPropertyType(propname);
-            if (propInfo == null)
-                throw new ParseException($"Property '{t.Value}' is not found.", -1);
-            targetExpression = Expression.MakeMemberAccess(targetExpression, propInfo);
-            return targetExpression;
         }
 
         private Type GetSymbolType(CompilerToken t)
