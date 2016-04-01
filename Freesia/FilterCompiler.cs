@@ -716,7 +716,7 @@ namespace Freesia
                     var s = TranslateSyntaxInfo(prop);
                     if (indexer == 0)
                     {
-                        s.TypeInfo = targetType.GetElementType();
+                        s.TypeInfo = targetType.GetUnderlyingEnumerableType();
                         targetType = s.TypeInfo;
                     }
                     yield return s;
@@ -880,7 +880,7 @@ namespace Freesia
                     yield return new SyntaxInfo(arg, SyntaxType.Argument);
                     yield return new SyntaxInfo(t, SyntaxType.Operator);
                     argname = arg.Value;
-                    argtype = latestResolvedType?.GetElementType();
+                    argtype = latestResolvedType?.GetUnderlyingEnumerableType();
                     pendingSymbols.Clear();
                     continue;
                 }
