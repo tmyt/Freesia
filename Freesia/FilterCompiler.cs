@@ -844,6 +844,7 @@ namespace Freesia
             var pendingSymbols = new Queue<CompilerToken>();
             var lambdaParsing = false;
             var brackets = 0;
+            var argstack = new Stack<Tuple<string, Type, int>>();
             var argname = default(string);
             var argtype = default(Type);
             var latestResolvedType = default(Type);
@@ -861,6 +862,10 @@ namespace Freesia
                 // enter Lambda parsing mode
                 if (t.Type == TokenType.Lambda)
                 {
+                    if (lambdaParsing)
+                    {
+                        argstack.Push(Tuple.Create(argname, argtype, brackets));
+                    }
                     lambdaParsing = true;
                     brackets = 1;
                     var arg = pendingSymbols.Dequeue();
@@ -885,7 +890,20 @@ namespace Freesia
                     }
                     pendingSymbols.Clear();
                 }
-                if (lambdaParsing && brackets == 0) { lambdaParsing = false; argname = null; }
+                if (lambdaParsing && brackets == 0)
+                {
+                    lambdaParsing = false;
+                    argname = null;
+                    // restore previews environment
+                    if (argstack.Count > 0)
+                    {
+                        var prev = argstack.Pop();
+                        argname = prev.Item1;
+                        argtype = prev.Item2;
+                        brackets = prev.Item3;
+                        lambdaParsing = true;
+                    }
+                }
                 // process rest of token
                 if (t.Type != TokenType.Symbol && t.Type != TokenType.PropertyAccess)
                 {

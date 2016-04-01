@@ -388,6 +388,31 @@ namespace FreesiaTest
                 SyntaxType.String,
                 SyntaxType.Operator
                 );
+            var infod = FilterCompiler<TestClass>.ParseForSyntaxHightlight(
+                "ints.contains(x => x.contains(y => y == 'C') || x == 'y')").ToArray();
+            AreSequenceEeual(a => a.Type, infod,
+                SyntaxType.Identifier,
+                SyntaxType.Operator,
+                SyntaxType.Identifier,
+                SyntaxType.Operator,
+                SyntaxType.Argument,
+                SyntaxType.Operator,
+                SyntaxType.Argument,
+                SyntaxType.Operator,
+                SyntaxType.Identifier,
+                SyntaxType.Operator,
+                SyntaxType.Argument,
+                SyntaxType.Operator,
+                SyntaxType.Argument,
+                SyntaxType.Operator,
+                SyntaxType.String,
+                SyntaxType.Operator,
+                SyntaxType.Operator,
+                SyntaxType.Argument,
+                SyntaxType.Operator,
+                SyntaxType.String,
+                SyntaxType.Operator
+                );
             var info = FilterCompiler<TestClass>.ParseForSyntaxHightlight(
                 "user.func == false && ints.contains(x => x =@i 'aa') && favorited != true || testclass2.s == 'bbb' && id >= 10").ToArray();
             Assert.AreEqual(info[0].Type, SyntaxType.Identifier);  // user
