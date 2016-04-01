@@ -65,9 +65,10 @@ namespace Freesia.Types
         ArrayArgs,
         Operator,
         Keyword,
+        Argument,
         Identifier,
         String,
-        Error
+        Error,
     }
 
     public enum TokenType
