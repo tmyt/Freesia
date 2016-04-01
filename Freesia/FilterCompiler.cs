@@ -883,7 +883,6 @@ namespace Freesia
                 {
                     if (t.Type == TokenType.OpenBracket) { brackets++; }
                     if (t.Type == TokenType.CloseBracket) { brackets--; }
-                    if (brackets == 0) { lambdaParsing = false; argname = null; }
                 }
                 if (pendingSymbols.Count > 0)
                 {
@@ -894,6 +893,7 @@ namespace Freesia
                     }
                     pendingSymbols.Clear();
                 }
+                if (lambdaParsing && brackets == 0) { lambdaParsing = false; argname = null; }
                 // process rest of token
                 if (t.Type != TokenType.Symbol && t.Type != TokenType.PropertyAccess)
                 {
