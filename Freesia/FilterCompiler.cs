@@ -30,13 +30,7 @@ namespace Freesia
         internal FilterCompiler()
         {
         }
-
-        private ASTNode Tokenize(string text)
-        {
-            var tokenizer = new Tokenizer(text);
-            return ASTBuilder.Generate(tokenizer.Parse());
-        }
-
+        
         private object CompileOne(ASTNode ast)
         {
             if (ast.Token.Type == TokenType.ArrayNode)
@@ -772,7 +766,7 @@ namespace Freesia
             }
         }
 
-        private static IEnumerable<SyntaxInfo> TakeSymbolsForCompletion(IEnumerable<SyntaxInfo> list)
+        private static IEnumerable<SyntaxInfo> TakeSymbols(IEnumerable<SyntaxInfo> list)
         {
             var indexer = 0;
             foreach (var a in list)
@@ -932,7 +926,7 @@ namespace Freesia
         {
             var c = new Tokenizer(text);
             var syntax = SyntaxHighlight(c.Parse(true)).ToArray();
-            var q = TakeSymbolsForCompletion(syntax.Reverse()).ToList();
+            var q = TakeSymbols(syntax.Reverse()).ToList();
             prefix = "";
             if (text.EndsWith("'") || text.EndsWith("\"")) return new List<string>();
             var last = q.FirstOrDefault();
