@@ -481,6 +481,9 @@ namespace FreesiaTest
             completion = FilterCompiler<TestClass>.Completion("testclass2.", out s);
             Assert.AreEqual("s", completion.First());
             Assert.AreEqual("", s);
+            completion = FilterCompiler<TestClass>.Completion("ints[0].c", out s);
+            Assert.AreEqual("chars", completion.First());
+            Assert.AreEqual("c", s);
             Assert.AreEqual(FilterCompiler<TestClass>.Completion("", out s).Count(),
                 typeof(TestClass).GetProperties().Length + 1);
         }

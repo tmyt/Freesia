@@ -45,11 +45,7 @@ namespace Freesia.Internal
             if (last.SubType == TokenType.IndexerEnd) return new List<string>();
             // 最後が '.' ならプロパティを見る
             var lookup = last.SubType == TokenType.PropertyAccess;
-            var type = default(Type);
-            if (last.SubType == TokenType.PropertyAccess)
-            {
-                type = q.Skip(1).FirstOrDefault()?.TypeInfo;
-            }
+            var type = lookup ? q.Skip(1).FirstOrDefault()?.TypeInfo : default(Type);
             // 末尾がエラーなら直前の要素
             if (last.Type == SyntaxType.Error)
             {
@@ -69,6 +65,6 @@ namespace Freesia.Internal
                 .Select(s => s.ToLowerInvariant())
                 .Where(n => n.StartsWith(pp))
                 .OrderBy(s => s);
-        } 
+        }
     }
 }
