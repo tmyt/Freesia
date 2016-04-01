@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -147,6 +148,7 @@ namespace Freesia
             var trycatch = Expression.TryCatch(root,
                 Expression.Catch(typeof(Exception), Expression.Constant(false)));
             var expr = Expression.Lambda<Func<T, bool>>(trycatch, _rootParameter);
+            Debug.WriteLine(root);
             return expr.Compile();
         }
 
@@ -322,7 +324,7 @@ namespace Freesia
         private Expression MakeValidation(object o)
         {
             if (!MayNullable(o)) throw new Exception();
-            var q = new Queue<Expression>();
+            var q = new Stack<Expression>();
             // Check all nullable properties
             var props = new Queue<Expression>();
             while (o is MemberExpression)
@@ -342,19 +344,19 @@ namespace Freesia
                     var t = new CompilerToken { Type = TokenType.Symbol, Value = "HasValue" };
                     var lhs = MakeMemberAccessExpression(prop, t);
                     var rhs = Expression.Constant(true);
-                    q.Enqueue(Expression.Equal(lhs, rhs));
+                    q.Push(Expression.Equal(lhs, rhs));
                 }
                 else
                 {
                     var rhs = Expression.Constant(null);
-                    q.Enqueue(Expression.NotEqual(prop, rhs));
+                    q.Push(Expression.NotEqual(prop, rhs));
                 }
             }
             // Concat all expressions
-            var e = q.Dequeue();
+            var e = q.Pop();
             while (q.Count > 0)
             {
-                e = Expression.AndAlso(e, q.Dequeue());
+                e = Expression.AndAlso(e, q.Pop());
             }
             return e;
         }
