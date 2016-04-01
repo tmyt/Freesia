@@ -344,7 +344,7 @@ namespace FreesiaTest
             //FilterCompiler<TestClass>.SyntaxHighlight(syntax);
             //FilterCompiler<TestClass>.ParseForSyntaxHightlight(AllOpsScript);
             //FilterCompiler<TestClass>.ParseForSyntaxHightlight("true false user 1 2 3 'a' == !a || b[1] || {true, false, null} text user.func text.length").ToArray();
-            var infoc = FilterCompiler<TestClass>.ParseForSyntaxHightlight(
+            var infoc = FilterCompiler<TestClass>.SyntaxHighlight(
                 "text == {'a', 'b', 'c'}").ToArray();
             AreSequenceEeual(a=>a.Type, infoc,
                 SyntaxType.Identifier,
@@ -357,7 +357,7 @@ namespace FreesiaTest
                 SyntaxType.String,
                 SyntaxType.Operator
                 );
-            var infob = FilterCompiler<TestClass>.ParseForSyntaxHightlight(
+            var infob = FilterCompiler<TestClass>.SyntaxHighlight(
                 "ints.contains(x => x.chars)").ToArray();
             AreSequenceEeual(a=>a.Type, infob,
                 SyntaxType.Identifier,
@@ -371,7 +371,7 @@ namespace FreesiaTest
                 SyntaxType.Identifier,
                 SyntaxType.Operator
                 );
-            var infoa = FilterCompiler<TestClass>.ParseForSyntaxHightlight(
+            var infoa = FilterCompiler<TestClass>.SyntaxHighlight(
                 "ints[0].contains(x => x =@i 'aa')").ToArray();
             AreSequenceEeual(a=>a.Type, infoa, 
                 SyntaxType.Identifier,
@@ -388,7 +388,7 @@ namespace FreesiaTest
                 SyntaxType.String,
                 SyntaxType.Operator
                 );
-            var infod = FilterCompiler<TestClass>.ParseForSyntaxHightlight(
+            var infod = FilterCompiler<TestClass>.SyntaxHighlight(
                 "ints.contains(x => x.contains(y => y == 'C') || x == 'y')").ToArray();
             AreSequenceEeual(a => a.Type, infod,
                 SyntaxType.Identifier,
@@ -413,7 +413,7 @@ namespace FreesiaTest
                 SyntaxType.String,
                 SyntaxType.Operator
                 );
-            var info = FilterCompiler<TestClass>.ParseForSyntaxHightlight(
+            var info = FilterCompiler<TestClass>.SyntaxHighlight(
                 "user.func == false && ints.contains(x => x =@i 'aa') && favorited != true || testclass2.s == 'bbb' && id >= 10").ToArray();
             Assert.AreEqual(info[0].Type, SyntaxType.Identifier);  // user
             Assert.AreEqual(info[1].Type, SyntaxType.Operator);    // .

@@ -839,6 +839,12 @@ namespace Freesia
             return c.CompileSyntax(ast);
         }
 
+        public static Func<T, bool> Compile(string text)
+        {
+            var tokenizer = new Tokenizer(text);
+            return Compile(tokenizer.Parse());
+        }
+
         public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<CompilerToken> tokenList)
         {
             var pendingSymbols = new Queue<CompilerToken>();
@@ -914,14 +920,7 @@ namespace Freesia
             foreach (var a in ParseSymbolType(pendingSymbols, argtype, argname)) yield return a;
         }
 
-        public static Func<T, bool> Compile(string text)
-        {
-            var c = new FilterCompiler<T>();
-            var ast = c.Tokenize(text);
-            return c.CompileSyntax(ast);
-        }
-
-        public static IEnumerable<SyntaxInfo> ParseForSyntaxHightlight(string text)
+        public static IEnumerable<SyntaxInfo> SyntaxHighlight(string text)
         {
             var c = new Tokenizer(text);
             return SyntaxHighlight(c.Parse(true));
