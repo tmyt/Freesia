@@ -11,7 +11,7 @@ using Freesia.Types;
 
 namespace Freesia.Internal
 {
-    internal class ExpressionBuilder<T> : FilterCompiler<T>
+    internal class ExpressionBuilder<T> : CompilerConfig<T>
     {
         private readonly ParameterExpression _rootParameter = Expression.Parameter(typeof(T), "status");
         private readonly Dictionary<string, ParameterExpression> _env = new Dictionary<string, ParameterExpression>();

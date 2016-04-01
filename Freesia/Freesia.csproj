@@ -38,6 +38,7 @@
     <!-- A reference to the entire .NET Framework is automatically included -->
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CompilerConfig.cs" />
     <Compile Include="FilterCompiler.cs" />
     <Compile Include="Internal\ASTBuilder.cs" />
     <Compile Include="Internal\ExpressionBuilder.cs" />

@@ -54,8 +54,8 @@ namespace FreesiaTest
         [ClassInitialize]
         public static void Setup(TestContext c)
         {
-            FilterCompiler<TestClass>.UserFunctionNamespace = "user";
-            FilterCompiler<TestClass>.Functions.Add("func", _ => true);
+            CompilerConfig<TestClass>.UserFunctionNamespace = "user";
+            CompilerConfig<TestClass>.Functions.Add("func", _ => true);
             RunTest("user.func == false");
         }
 

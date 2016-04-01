@@ -7,7 +7,7 @@ using Freesia.Types;
 
 namespace Freesia.Internal
 {
-    internal class SyntaxHighlighter<T> : FilterCompiler<T>
+    internal class SyntaxHighlighter<T> : CompilerConfig<T>
     {
         private static SyntaxInfo TranslateSyntaxInfo(CompilerToken t)
         {
@@ -140,7 +140,7 @@ namespace Freesia.Internal
             }
         }
 
-        public static IEnumerable<SyntaxInfo> SyntaxHighlightInternal(IEnumerable<CompilerToken> tokenList)
+        public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<CompilerToken> tokenList)
         {
             var pendingSymbols = new Queue<CompilerToken>();
             var lambdaParsing = false;

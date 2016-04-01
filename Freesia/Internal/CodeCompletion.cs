@@ -8,7 +8,7 @@ using Freesia.Types;
 
 namespace Freesia.Internal
 {
-    internal class CodeCompletion<T> : FilterCompiler<T>
+    internal class CodeCompletion<T> : CompilerConfig<T>
     {
         private static IEnumerable<SyntaxInfo> TakeSymbols(IEnumerable<SyntaxInfo> list)
         {
@@ -24,10 +24,10 @@ namespace Freesia.Internal
             }
         }
 
-        public static IEnumerable<string> CompletionInternal(string text, out string prefix)
+        public static IEnumerable<string> Completion(string text, out string prefix)
         {
             var c = new Tokenizer(text);
-            var syntax = SyntaxHighlight(c.Parse(true)).ToArray();
+            var syntax = FilterCompiler<T>.SyntaxHighlight(c.Parse(true)).ToArray();
             var q = TakeSymbols(syntax.Reverse()).ToList();
             prefix = "";
             if (text.EndsWith("'") || text.EndsWith("\"")) return new List<string>();

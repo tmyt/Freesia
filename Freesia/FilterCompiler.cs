@@ -7,13 +7,6 @@ namespace Freesia
 {
     public class FilterCompiler<T>
     {
-        protected class UserFunctionTypePlaceholder { }
-
-        private static Dictionary<string, Func<T, bool>> _functions;
-        public static Dictionary<string, Func<T, bool>> Functions => _functions ?? (_functions = new Dictionary<string, Func<T, bool>>());
-
-        public static string UserFunctionNamespace { get; set; }
-
         internal FilterCompiler() { }
 
         public static IEnumerable<CompilerToken> Parse(string text)
@@ -36,7 +29,7 @@ namespace Freesia
 
         public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<CompilerToken> tokenList)
         {
-            return SyntaxHighlighter<T>.SyntaxHighlightInternal(tokenList);
+            return SyntaxHighlighter<T>.SyntaxHighlight(tokenList);
         }
 
         public static IEnumerable<SyntaxInfo> SyntaxHighlight(string text)
@@ -47,7 +40,7 @@ namespace Freesia
 
         public static IEnumerable<string> Completion(string text, out string prefix)
         {
-            return CodeCompletion<T>.CompletionInternal(text, out prefix);
+            return CodeCompletion<T>.Completion(text, out prefix);
         }
     }
 }
