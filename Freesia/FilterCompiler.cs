@@ -4,7 +4,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Freesia.Internal;
 using Freesia.Internal.Extensions;
 using Freesia.Internal.Reflection;
@@ -325,25 +324,30 @@ namespace Freesia
             if (!MayNullable(o)) throw new Exception();
             var q = new Queue<Expression>();
             // Check all nullable properties
-            var tmpSymbol = new CompilerToken { Type = TokenType.Symbol, Value = null };
-            var props = ((CompilerToken)o).Value.Split('.');
+            var props = new Queue<Expression>();
+            while (o is MemberExpression)
+            {
+                var expr = o as MemberExpression;
+                if(MayNullable(expr, false)) props.Enqueue(expr);
+                o = expr.Expression;
+            }
+            if (o is CompilerToken)
+            {
+                if(MayNullable(o, false)) props.Enqueue(MakePropertyAccess((CompilerToken) o));
+            }
             foreach (var prop in props)
             {
-                if (!String.IsNullOrEmpty(tmpSymbol.Value)) tmpSymbol.Value += ".";
-                tmpSymbol.Value += prop;
-                if (!MayNullable(tmpSymbol, false)) continue;
-                if (IsNullable(tmpSymbol))
+                if (IsNullable(prop))
                 {
-                    var t = new CompilerToken { Type = TokenType.Symbol, Value = (tmpSymbol).Value + ".HasValue" };
-                    var lhs = MakePropertyAccess(t);
+                    var t = new CompilerToken { Type = TokenType.Symbol, Value = "HasValue" };
+                    var lhs = MakeMemberAccessExpression(prop, t);
                     var rhs = Expression.Constant(true);
                     q.Enqueue(Expression.Equal(lhs, rhs));
                 }
                 else
                 {
-                    var lhs = MakePropertyAccess(tmpSymbol);
                     var rhs = Expression.Constant(null);
-                    q.Enqueue(Expression.NotEqual(lhs, rhs));
+                    q.Enqueue(Expression.NotEqual(prop, rhs));
                 }
             }
             // Concat all expressions
@@ -385,6 +389,7 @@ namespace Freesia
         {
             var expr = lhs as Expression ?? MakePropertyAccess((CompilerToken)lhs);
             var valueExpr = MakeNullableAccessExpression(expr);
+            if (IsNullable(lhs) && rhs.Value.ToLowerInvariant() == "hasvalue") valueExpr = expr;
             var leftType = valueExpr.Type;
             if (!rhs.IsSymbol) throw new ParseException("Property accessor rhs should be Symbol.", rhs.Position);
             if (valueExpr.Type == typeof(UserFunctionTypePlaceholder))
@@ -444,6 +449,17 @@ namespace Freesia
 
         private bool MayNullable(object o, bool checkRecursive = true)
         {
+            if (o is MemberExpression)
+            {
+                while (o is MemberExpression)
+                {
+                    var expr = o as MemberExpression;
+                    if (!expr.Type.GetTypeInfo().IsValueType) return true;
+                    if (Nullable.GetUnderlyingType(expr.Type) != null) return true;
+                    o = expr.Expression;
+                    if (!checkRecursive) return false;
+                }
+            }
             if (o is Expression) return false;
             if (o is CompilerToken)
             {
@@ -451,26 +467,9 @@ namespace Freesia
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
-                        if (checkRecursive)
-                        {
-                            var tmpSymbol = new CompilerToken { Type = TokenType.Symbol, Value = null };
-                            var props = t.Value.Split('.');
-                            if (props[0] == UserFunctionNamespace) return false;
-                            foreach (var prop in props)
-                            {
-                                if (!String.IsNullOrEmpty(tmpSymbol.Value)) tmpSymbol.Value += ".";
-                                tmpSymbol.Value += prop;
-                                var type = GetSymbolType(tmpSymbol);
-                                if (!type.GetTypeInfo().IsValueType) return true;
-                                if (Nullable.GetUnderlyingType(type) != null) return true;
-                            }
-                        }
-                        else
-                        {
-                            var type = GetSymbolType(t);
-                            if (!type.GetTypeInfo().IsValueType) return true;
-                            if (Nullable.GetUnderlyingType(type) != null) return true;
-                        }
+                        var type = GetSymbolType(t);
+                        if (!type.GetTypeInfo().IsValueType) return true;
+                        if (Nullable.GetUnderlyingType(type) != null) return true;
                         return false;
                     case TokenType.String:
                     case TokenType.Double:
@@ -486,6 +485,13 @@ namespace Freesia
 
         private bool IsNullable(object o)
         {
+            if (o is MemberExpression)
+            {
+                var expr = o as MemberExpression;
+                if (!expr.Type.GetTypeInfo().IsValueType) return false;
+                if (Nullable.GetUnderlyingType(expr.Type) != null) return true;
+                return false;
+            }
             if (o is Expression) return false;
             if (o is CompilerToken)
             {
@@ -605,7 +611,7 @@ namespace Freesia
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
-                        return MakePropertyAccess(t);
+                        return MakeNullableAccessExpression(MakePropertyAccess(t));
                     case TokenType.String:
                         return Expression.Constant(t.Value);
                     case TokenType.Double:
@@ -643,20 +649,15 @@ namespace Freesia
             if (_env.ContainsKey(t.Value)) return _env[t.Value];
             var targetExpression = (Expression)_rootParameter;
             var targetType = typeof(T);
-            var properties = (IsNullable(t) ? t.Value + ".Value" : t.Value).Split('.');
-            foreach (var prop in properties)
+            var propname = t.Value;
+            if (propname == UserFunctionNamespace)
             {
-                var propname = prop;
-                if (propname == UserFunctionNamespace && properties.First() == prop)
-                {
-                    return Expression.Constant(null, typeof(UserFunctionTypePlaceholder));
-                }
-                var propInfo = GetPreferredPropertyType(targetType, propname);
-                if (propInfo == null)
-                    throw new ParseException(String.Format("Property '{0}' is not found.", t.Value), -1);
-                targetExpression = Expression.MakeMemberAccess(targetExpression, propInfo);
-                targetType = propInfo.PropertyType;
+                return Expression.Constant(null, typeof(UserFunctionTypePlaceholder));
             }
+            var propInfo = GetPreferredPropertyType(targetType, propname);
+            if (propInfo == null)
+                throw new ParseException(String.Format("Property '{0}' is not found.", t.Value), -1);
+            targetExpression = Expression.MakeMemberAccess(targetExpression, propInfo);
             return targetExpression;
         }
 
@@ -664,23 +665,15 @@ namespace Freesia
         {
             if (t.Type != TokenType.Symbol) return null;
             if (_env.ContainsKey(t.Value)) return _env[t.Value].Type;
-            var properties = t.Value.Split('.');
-            var statusType = typeof(T);
-            var targetType = statusType;
-            foreach (var prop in properties)
+            var propname = t.Value;
+            if (propname == UserFunctionNamespace)
             {
-                var propname = prop;
-                if (propname == UserFunctionNamespace && properties.First() == prop)
-                {
-                    targetType = typeof(UserFunctionTypePlaceholder);
-                    continue;
-                }
-                var propInfo = GetPreferredPropertyType(targetType, propname);
-                if (propInfo == null)
-                    throw new ParseException(String.Format("Property '{0}' is not found.", t.Value), -1);
-                targetType = propInfo.PropertyType;
+                return typeof(UserFunctionTypePlaceholder);
             }
-            return targetType;
+            var propInfo = GetPreferredPropertyType(typeof(T), propname);
+            if (propInfo == null)
+                throw new ParseException(String.Format("Property '{0}' is not found.", t.Value), -1);
+            return propInfo.PropertyType;
         }
 
         private static PropertyInfo GetPreferredPropertyType(Type targetType, string propname)
@@ -690,8 +683,7 @@ namespace Freesia
 
         private static IEnumerable<SyntaxInfo> ParseSymbolType(Queue<CompilerToken> symbols, Type argType, string argName)
         {
-            var statusType = typeof(T);
-            var targetType = statusType;
+            var targetType = typeof(T);
             var indexer = 0;
             // yield break for no symbols
             if (symbols.Count == 0) yield break;
