@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Freesia;
 using Freesia.Types;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace FreesiaTest
+namespace Freesia.Test
 {
     class TestClass
     {
