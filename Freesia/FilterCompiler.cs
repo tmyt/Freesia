@@ -431,7 +431,8 @@ namespace Freesia
                 default:
                     throw new ParseException($"Method {lhs.Right.Token.Value} is not supported.", lhs.Right.Token.Position);
             }
-            return Expression.Call(method, rootExpr, Expression.Constant(closureExpr));
+            var callExpr = Expression.Call(method, rootExpr, Expression.Constant(closureExpr));
+            return MayNullable(rootExpr) ? Expression.AndAlso(MakeValidation(rootExpr), callExpr) : (Expression)callExpr;
         }
 
         private Expression MakeNullableAccessExpression(Expression expr)
@@ -716,7 +717,7 @@ namespace Freesia
                     var s = TranslateSyntaxInfo(prop);
                     if (indexer == 0)
                     {
-                        s.TypeInfo = targetType.GetUnderlyingEnumerableType();
+                        s.TypeInfo = targetType.GetUnderlyingElementType();
                         targetType = s.TypeInfo;
                     }
                     yield return s;
@@ -880,7 +881,7 @@ namespace Freesia
                     yield return new SyntaxInfo(arg, SyntaxType.Argument);
                     yield return new SyntaxInfo(t, SyntaxType.Operator);
                     argname = arg.Value;
-                    argtype = latestResolvedType?.GetUnderlyingEnumerableType();
+                    argtype = latestResolvedType?.GetUnderlyingElementType();
                     pendingSymbols.Clear();
                     continue;
                 }

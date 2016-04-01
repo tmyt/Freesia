@@ -17,5 +17,11 @@ namespace Freesia.Internal.Extensions
             return type.GetTypeInfo().ImplementedInterfaces
                 .FirstOrDefault(t => t.GetTypeInfo().IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>));
         }
+
+        public static Type GetUnderlyingElementType(this Type type)
+        {
+            return type.GetTypeInfo().ImplementedInterfaces
+                .FirstOrDefault(t => t.GetTypeInfo().IsGenericType && t.GetGenericTypeDefinition() == typeof (IEnumerable<>))?.GenericTypeArguments[0];
+        }
     }
 }
