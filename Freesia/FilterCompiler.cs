@@ -394,7 +394,7 @@ namespace Freesia
                 return Expression.Call(Expression.Constant(func),
                     func.GetType().GetRuntimeMethod("Invoke", new[] { typeof(T) }), _rootParameter);
             }
-            var prop = GetPreferredPropertyType(leftType, rhs.Value);
+            var prop = leftType.GetPreferredPropertyType(rhs.Value);
             return Expression.Property(valueExpr, prop);
         }
 
@@ -649,7 +649,7 @@ namespace Freesia
             {
                 return Expression.Constant(null, typeof(UserFunctionTypePlaceholder));
             }
-            var propInfo = GetPreferredPropertyType(targetType, propname);
+            var propInfo = targetType.GetPreferredPropertyType(propname);
             if (propInfo == null)
                 throw new ParseException(String.Format("Property '{0}' is not found.", t.Value), -1);
             targetExpression = Expression.MakeMemberAccess(targetExpression, propInfo);
@@ -665,15 +665,10 @@ namespace Freesia
             {
                 return typeof(UserFunctionTypePlaceholder);
             }
-            var propInfo = GetPreferredPropertyType(typeof(T), propname);
+            var propInfo = typeof(T).GetPreferredPropertyType(propname);
             if (propInfo == null)
                 throw new ParseException(String.Format("Property '{0}' is not found.", t.Value), -1);
             return propInfo.PropertyType;
-        }
-
-        private static PropertyInfo GetPreferredPropertyType(Type targetType, string propname)
-        {
-            return targetType?.GetRuntimeProperties().FirstOrDefault(p => p.Name.ToLowerInvariant() == propname.ToLowerInvariant());
         }
 
         private static IEnumerable<SyntaxInfo> ParseSymbolType(Queue<CompilerToken> symbols, Type argType, string argName)
@@ -732,7 +727,7 @@ namespace Freesia
                 }
                 else
                 {
-                    var propInfo = GetPreferredPropertyType(targetType, propname);
+                    var propInfo = targetType.GetPreferredPropertyType(propname);
                     syntaxType = propInfo == null ? SyntaxType.Error : SyntaxType.Identifier;
                     if (syntaxType == SyntaxType.Error && (targetType?.IsEnumerable() ?? false))
                     {
@@ -823,8 +818,7 @@ namespace Freesia
 
         public static IEnumerable<CompilerToken> Parse(string text)
         {
-            var c = new Tokenizer(text);
-            return c.Parse(true);
+            return new Tokenizer(text).Parse(true);
         }
 
         public static Func<T, bool> Compile(IEnumerable<CompilerToken> tokenList)

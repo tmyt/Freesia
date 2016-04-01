@@ -23,5 +23,10 @@ namespace Freesia.Internal.Extensions
             return type.GetTypeInfo().ImplementedInterfaces
                 .FirstOrDefault(t => t.GetTypeInfo().IsGenericType && t.GetGenericTypeDefinition() == typeof (IEnumerable<>))?.GenericTypeArguments[0];
         }
+
+        public static PropertyInfo GetPreferredPropertyType(this Type targetType, string propname)
+        {
+            return targetType?.GetRuntimeProperties().FirstOrDefault(p => p.Name.ToLowerInvariant() == propname.ToLowerInvariant());
+        }
     }
 }
