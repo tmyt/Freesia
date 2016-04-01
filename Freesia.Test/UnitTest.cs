@@ -344,6 +344,19 @@ namespace FreesiaTest
             //FilterCompiler<TestClass>.SyntaxHighlight(syntax);
             //FilterCompiler<TestClass>.ParseForSyntaxHightlight(AllOpsScript);
             //FilterCompiler<TestClass>.ParseForSyntaxHightlight("true false user 1 2 3 'a' == !a || b[1] || {true, false, null} text user.func text.length").ToArray();
+            var infoc = FilterCompiler<TestClass>.ParseForSyntaxHightlight(
+                "text == {'a', 'b', 'c'}").ToArray();
+            AreSequenceEeual(a=>a.Type, infoc,
+                SyntaxType.Identifier,
+                SyntaxType.Operator,
+                SyntaxType.Operator,
+                SyntaxType.String,
+                SyntaxType.Operator,
+                SyntaxType.String,
+                SyntaxType.Operator,
+                SyntaxType.String,
+                SyntaxType.Operator
+                );
             var infob = FilterCompiler<TestClass>.ParseForSyntaxHightlight(
                 "ints.contains(x => x.chars)").ToArray();
             AreSequenceEeual(a=>a.Type, infob,
@@ -351,9 +364,9 @@ namespace FreesiaTest
                 SyntaxType.Operator,
                 SyntaxType.Identifier,
                 SyntaxType.Operator,
-                SyntaxType.Keyword,
+                SyntaxType.Argument,
                 SyntaxType.Operator,
-                SyntaxType.Keyword,
+                SyntaxType.Argument,
                 SyntaxType.Operator,
                 SyntaxType.Identifier,
                 SyntaxType.Operator
@@ -368,9 +381,9 @@ namespace FreesiaTest
                 SyntaxType.Operator,
                 SyntaxType.Identifier,
                 SyntaxType.Operator,
-                SyntaxType.Keyword,
+                SyntaxType.Argument,
                 SyntaxType.Operator,
-                SyntaxType.Keyword,
+                SyntaxType.Argument,
                 SyntaxType.Operator,
                 SyntaxType.String,
                 SyntaxType.Operator
@@ -387,9 +400,9 @@ namespace FreesiaTest
             Assert.AreEqual(info[7].Type, SyntaxType.Operator);    // .
             Assert.AreEqual(info[8].Type, SyntaxType.Identifier);  // contains
             Assert.AreEqual(info[9].Type, SyntaxType.Operator);    // (
-            Assert.AreEqual(info[10].Type, SyntaxType.Keyword);    // x
+            Assert.AreEqual(info[10].Type, SyntaxType.Argument);   // x
             Assert.AreEqual(info[11].Type, SyntaxType.Operator);   // =>
-            Assert.AreEqual(info[12].Type, SyntaxType.Keyword);    // x
+            Assert.AreEqual(info[12].Type, SyntaxType.Argument);   // x
             Assert.AreEqual(info[13].Type, SyntaxType.Operator);   // =@i
             Assert.AreEqual(info[14].Type, SyntaxType.String);     // 'aa'
             Assert.AreEqual(info[15].Type, SyntaxType.Operator);   // )
@@ -399,7 +412,7 @@ namespace FreesiaTest
             Assert.AreEqual(info[19].Type, SyntaxType.Keyword);    // true
             Assert.AreEqual(info[20].Type, SyntaxType.Operator);   // ||
             Assert.AreEqual(info[21].Type, SyntaxType.Identifier); // testclass2
-            Assert.AreEqual(info[22].Type, SyntaxType.Operator);    // .
+            Assert.AreEqual(info[22].Type, SyntaxType.Operator);   // .
             Assert.AreEqual(info[23].Type, SyntaxType.Identifier); // s
             Assert.AreEqual(info[24].Type, SyntaxType.Operator);   // ==
             Assert.AreEqual(info[25].Type, SyntaxType.String);     // 'bbb'

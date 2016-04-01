@@ -62,7 +62,6 @@ namespace Freesia.Types
     public enum SyntaxType
     {
         Constant,
-        ArrayArgs,
         Operator,
         Keyword,
         Argument,
