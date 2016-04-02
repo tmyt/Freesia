@@ -294,10 +294,10 @@ namespace Freesia.Internal
         private Expression MakeLambdaExpression(Type type, CompilerToken arg, ASTNode body)
         {
             var p = Expression.Parameter(type, arg.Value);
-            var tfn = typeof(Func<,>).MakeGenericType(type, typeof(bool));
             _env.Add(arg.Value, p);
             var one = MakeWrappedExpression(CompileOne(body));
             _env.Clear();
+            var tfn = typeof(Func<,>).MakeGenericType(type, one.Type);
             return Expression.Lambda(tfn, one, body.Dump(), new[] { p });
         }
 
@@ -400,19 +400,14 @@ namespace Freesia.Internal
             // build lambda expression
             var closure = MakeLambdaExpression(argType, rhs.Left.Token, rhs.Right);
             // apply method
-            var method = default(MethodInfo);
             var methodName = lhs.Right.Token.Value.ToLowerInvariant();
             var closureExpr = ((LambdaExpression)closure).Compile();
-            switch (methodName)
-            {
-                case "contains":
-                    method = ExtensionMethods.Methods[methodName](new[] { argType });
-                    break;
-                default:
-                    throw new ParseException($"Method {lhs.Right.Token.Value} is not supported.", lhs.Right.Token.Position);
-            }
-            var callExpr = Expression.Call(method, rootExpr, Expression.Constant(closureExpr));
-            return MayNullable(rootExpr) ? Expression.AndAlso(MakeValidation(rootExpr), callExpr) : (Expression)callExpr;
+            var info = Helper.FindPreferredMethod(methodName, argType, ((LambdaExpression)closure).ReturnType);
+            if (info == null) throw new ParseException($"Could not found preferred method {methodName}.", lhs.Right.Token.Position);
+            var callExpr = Expression.Call(info, rootExpr, Expression.Constant(closureExpr));
+            // TODO: Null check
+            //return MayNullable(rootExpr) ? Expression.(MakeValidation(rootExpr), callExpr) : (Expression)callExpr;
+            return callExpr;
         }
 
         private Expression MakeNullableAccessExpression(Expression expr)
