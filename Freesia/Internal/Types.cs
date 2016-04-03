@@ -23,7 +23,7 @@ namespace Freesia.Internal.Types
             return $"<{Left?.Dump()} {Token} {Right?.Dump()}>";
         }
     }
-    
+
     internal enum Associativity
     {
         LeftToRight,
@@ -53,7 +53,8 @@ namespace Freesia.Internal.Types
             {TokenType.NotContainsI, 40},
             {TokenType.And, 50},
             {TokenType.Or, 50},
-            {TokenType.Lambda, 100 }
+            {TokenType.Lambda, 60 },
+            {TokenType.ArrayDelimiter, 70 },
         };
 
         public static Dictionary<TokenType, Associativity> Associativity = new Dictionary<TokenType, Associativity>
@@ -77,7 +78,8 @@ namespace Freesia.Internal.Types
             {TokenType.NotContainsI, Types.Associativity.LeftToRight},
             {TokenType.And, Types.Associativity.LeftToRight},
             {TokenType.Or, Types.Associativity.LeftToRight},
-            {TokenType.Lambda, Types.Associativity.LeftToRight }
+            {TokenType.Lambda, Types.Associativity.RightToLeft} ,
+            {TokenType.ArrayDelimiter, Types.Associativity.LeftToRight },
         };
     }
 
@@ -86,6 +88,6 @@ namespace Freesia.Internal.Types
         public static Dictionary<string, Func<Type[], MethodInfo>> Methods = new Dictionary<string, Func<Type[], MethodInfo>>
         {
             { "contains", types => (MethodInfo)Cache.EnumerableAny.Value.MakeGenericMethod(types).Invoke(null, new object[0]) }
-        }; 
+        };
     }
 }

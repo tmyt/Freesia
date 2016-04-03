@@ -17,6 +17,7 @@ namespace Freesia.Internal
         private readonly Dictionary<string, ParameterExpression> _env = new Dictionary<string, ParameterExpression>();
 
         private delegate Expression BinaryExpressionBuilder(Expression lhs, Expression rhs);
+
         private delegate Expression UnaryExpressionBuilder(Expression expr);
 
         private object CompileOne(ASTNode ast)
@@ -295,7 +296,7 @@ namespace Freesia.Internal
         {
             var p = Expression.Parameter(type, arg.Value);
             _env.Add(arg.Value, p);
-            var one = MakeWrappedExpression(CompileOne(body));
+            var one = MakeExpression(CompileOne(body));
             _env.Clear();
             var tfn = typeof(Func<,>).MakeGenericType(type, one.Type);
             return Expression.Lambda(tfn, one, body.Dump(), new[] { p });
@@ -390,21 +391,20 @@ namespace Freesia.Internal
         {
             if (lhs.Token.Type != TokenType.PropertyAccess)
                 throw new ParseException("Invoke method requires property access.", lhs.Token.Position);
-            if (rhs.Token.Type != TokenType.Lambda)
-                throw new ParseException("Invoke method requires lambda expression.", rhs.Token.Position);
             var rootExpr = MakeExpression(CompileOne(lhs.Left));
             var ie = rootExpr.Type.GetUnderlyingEnumerableType();
             if (ie == null)
                 throw new ParseException("Method only apply to IE<T>.", lhs.Token.Position);
-            var argType = ie.GenericTypeArguments[0]; // IE< 'T' >
-            // build lambda expression
-            var closure = MakeLambdaExpression(argType, rhs.Left.Token, rhs.Right);
+            // build argument list
+            var args = new[] { rootExpr }.Concat(MakeArgumentList(ie.GetUnderlyingElementType(), rhs)).ToArray();
+            var argTypes = args.Select(x => x.Type).ToArray();
+            argTypes[0] = ie;
             // apply method
             var methodName = lhs.Right.Token.Value.ToLowerInvariant();
-            var closureExpr = ((LambdaExpression)closure).Compile();
-            var info = Helper.FindPreferredMethod(methodName, argType, ((LambdaExpression)closure).ReturnType);
-            if (info == null) throw new ParseException($"Could not found preferred method {methodName}.", lhs.Right.Token.Position);
-            var callExpr = Expression.Call(info, rootExpr, Expression.Constant(closureExpr));
+            var info = Helper.FindPreferredMethod(methodName, argTypes);
+            if (info == null)
+                throw new ParseException($"Could not found preferred method {methodName}.", lhs.Right.Token.Position);
+            var callExpr = Expression.Call(info, args);
             // TODO: Null check
             //return MayNullable(rootExpr) ? Expression.(MakeValidation(rootExpr), callExpr) : (Expression)callExpr;
             return callExpr;
@@ -482,6 +482,27 @@ namespace Freesia.Internal
                 throw new ParseException($"Property '{t.Value}' is not found.", -1);
             targetExpression = Expression.MakeMemberAccess(targetExpression, propInfo);
             return targetExpression;
+        }
+
+        private Expression[] MakeArgumentList(Type elementType, ASTNode node)
+        {
+            if (node.Token.Type == TokenType.Nop) return new Expression[0];
+            var stack = new Stack<ASTNode>();
+            stack.Push(node);
+            while (stack.Count > 0)
+            {
+                var n = stack.Pop();
+                if (n.Token.Type != TokenType.ArrayDelimiter)
+                {
+                    stack.Push(n);
+                    break;
+                }
+                stack.Push(n.Right);
+                stack.Push(n.Left);
+            }
+            return stack.Select(x => x.Token.Type == TokenType.Lambda
+                ? MakeLambdaExpression(elementType, x.Left.Token, x.Right)
+                : MakeExpression(CompileOne(x))).ToArray();
         }
 
         private bool MayNullable(object o, bool checkRecursive = true)

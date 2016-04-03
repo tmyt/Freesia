@@ -22,6 +22,7 @@ namespace Freesia.Internal
             var values = new Stack<ASTNode>();
             CompilerToken p1, p2 = null;
             var inArray = false;
+            var inArgList = false;
             foreach (var _token in list)
             {
                 var token = _token; // make writeable
@@ -94,11 +95,17 @@ namespace Freesia.Internal
                 // found ')'
                 if (token.Type == TokenType.CloseBracket)
                 {
+                    var nopBracket = p1?.Type == TokenType.OpenBracket;
                     while (ops.Peek().Type != TokenType.OpenBracket)
                     {
                         values.Push(MakeAst(ops.Pop(), ref values));
                     }
                     ops.Pop();
+                    // for zero arguments
+                    if (nopBracket && ops.Count > 0 && ops.Peek().Type == TokenType.InvokeMethod)
+                    {
+                        values.Push(new ASTNode(new CompilerToken { Type = TokenType.Nop }));
+                    }
                     continue;
                 }
                 // found '('
@@ -108,6 +115,7 @@ namespace Freesia.Internal
                         || p1.Type == TokenType.PropertyAccess
                         || p1.Type == TokenType.IndexerNode))
                     {
+                        inArgList = true;
                         token = new CompilerToken { Type = TokenType.InvokeMethod, Value = "()", Length = 2, Position = token.Position };
                     }
                     else
@@ -158,7 +166,7 @@ namespace Freesia.Internal
             {
                 return GenerateInternal(list);
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 return null;
             }
