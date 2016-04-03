@@ -22,7 +22,6 @@ namespace Freesia.Internal
             var values = new Stack<ASTNode>();
             CompilerToken p1, p2 = null;
             var inArray = false;
-            var inArgList = false;
             foreach (var _token in list)
             {
                 var token = _token; // make writeable
@@ -103,9 +102,7 @@ namespace Freesia.Internal
                     ops.Pop();
                     // for zero arguments
                     if (nopBracket && ops.Count > 0 && ops.Peek().Type == TokenType.InvokeMethod)
-                    {
                         values.Push(new ASTNode(new CompilerToken { Type = TokenType.Nop }));
-                    }
                     continue;
                 }
                 // found '('
@@ -115,7 +112,6 @@ namespace Freesia.Internal
                         || p1.Type == TokenType.PropertyAccess
                         || p1.Type == TokenType.IndexerNode))
                     {
-                        inArgList = true;
                         token = new CompilerToken { Type = TokenType.InvokeMethod, Value = "()", Length = 2, Position = token.Position };
                     }
                     else
@@ -142,14 +138,10 @@ namespace Freesia.Internal
                 ops.Push(token);
                 // add '(' for MethodInvoke
                 if (token.Type == TokenType.InvokeMethod)
-                {
                     ops.Push(new CompilerToken { Type = TokenType.OpenBracket, Value = "(", Length = 1, Position = token.Position });
-                }
                 // add pseudo value
                 if (token.Type == TokenType.Not)
-                {
                     values.Push(new ASTNode(new CompilerToken { Type = TokenType.Nop }));
-                }
             }
             // take all ops
             while (ops.Count != 0)

@@ -49,9 +49,7 @@ namespace Freesia.Internal
             var type = lookup ? q.Skip(1).FirstOrDefault()?.TypeInfo : default(Type);
             // 末尾がエラーなら直前の要素
             if (last.Type == SyntaxType.Error)
-            {
                 type = q.Count > 2 ? q.Skip(2).FirstOrDefault()?.TypeInfo : typeof(T);
-            }
             // 2個以上エラーは空
             if (q.Count(t => t.Type == SyntaxType.Error) > 1) return new List<string>();
             if (type == null) return new List<string>();

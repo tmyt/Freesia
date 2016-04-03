@@ -181,8 +181,8 @@ namespace Freesia.Internal
                 }
                 if (lambdaParsing)
                 {
-                    if (t.Type == TokenType.OpenBracket) { brackets++; }
-                    if (t.Type == TokenType.CloseBracket) { brackets--; }
+                    if (t.Type == TokenType.OpenBracket) brackets++;
+                    if (t.Type == TokenType.CloseBracket) brackets--;
                 }
                 if (pendingSymbols.Count > 0)
                 {

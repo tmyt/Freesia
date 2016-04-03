@@ -41,27 +41,17 @@ namespace Freesia.Internal
                 return items.ToArray();
             }
             if (ast.Token.Type == TokenType.IndexerNode)
-            {
                 return MakeIndexerExpression(ast.Left, ast.Right);
-            }
             if (!ast.Token.IsOperator)
-            {
                 return ast.Token;
-            }
-            if (ast.Token.Type == TokenType.Lambda)
+            switch (ast.Token.Type)
             {
-                // Parse for Lambda
-                return MakeLambdaExpression(typeof(object), ast.Left.Token, ast.Right);
-            }
-            if (ast.Token.Type == TokenType.InvokeMethod)
-            {
-                // Parse for MethodInvoke
-                return MakeMethodInvokeExpression(ast.Left, ast.Right);
-            }
-            if (ast.Token.Type == TokenType.Not)
-            {
-                // Here is Unary
-                return MakeUnaryExpression(Expression.Not, CompileOne(ast.Left));
+                case TokenType.Lambda:
+                    return MakeLambdaExpression(typeof(object), ast.Left.Token, ast.Right);
+                case TokenType.InvokeMethod:
+                    return MakeMethodInvokeExpression(ast.Left, ast.Right);
+                case TokenType.Not:
+                    return MakeUnaryExpression(Expression.Not, CompileOne(ast.Left));
             }
             var lhs = CompileOne(ast.Left);
             var rhs = CompileOne(ast.Right);
@@ -73,7 +63,7 @@ namespace Freesia.Internal
                     lhs = MakeConvertExpression(rhs, lhs);
                 if (!iscl && iscr)
                     rhs = MakeConvertExpression(lhs, rhs);
-                if (iscl && iscr) { } // 両方Constとか知らない
+                if (iscl && iscr) ; // 両方Constとか知らない
             }
             switch (ast.Token.Type)
             {
@@ -315,9 +305,7 @@ namespace Freesia.Internal
                 o = expr.Expression;
             }
             if (o is CompilerToken)
-            {
                 if (MayNullable(o, false)) props.Enqueue(MakePropertyAccess((CompilerToken)o));
-            }
             foreach (var prop in props)
             {
                 if (IsNullable(prop))
@@ -346,9 +334,7 @@ namespace Freesia.Internal
         {
             var expr = MakeExpression(o);
             if (expr.Type == typeof(string))
-            {
                 return Expression.Call(expr, Cache.StringToLowerInvariant.Value);
-            }
             throw new ParseException("case insensitive option can only use to Property or String.", -1);
         }
 
@@ -358,9 +344,7 @@ namespace Freesia.Internal
             var i = GetConstantValue(indexer.Token);
             if (i is Double) throw new ParseException("Indexer should be int value.", indexer.Token.Position);
             if (property.Type.IsArray)
-            {
                 return Expression.ArrayIndex(property, Expression.Constant(Convert.ToInt32(i)));
-            }
             var propInfo = property.Type.GetRuntimeProperty("Item");
             if (propInfo == null)
                 throw new ParseException($"Property '{prop.Token.Value}' is not indexed type.", -1);
@@ -450,8 +434,7 @@ namespace Freesia.Internal
 
         private Expression MakeRegexExpression(Expression lhs, Expression rhs)
         {
-            var ctor =
-                Expression.New(
+            var ctor = Expression.New(
                     typeof(Regex).GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 2),
                     rhs, Expression.Constant(RegexOptions.Singleline));
             var regexObj = Expression.Parameter(typeof(Regex), "regex");
@@ -474,9 +457,7 @@ namespace Freesia.Internal
             var targetType = typeof(T);
             var propname = t.Value;
             if (propname == UserFunctionNamespace)
-            {
                 return Expression.Constant(null, typeof(UserFunctionTypePlaceholder));
-            }
             var propInfo = targetType.GetPreferredPropertyType(propname);
             if (propInfo == null)
                 throw new ParseException($"Property '{t.Value}' is not found.", -1);
@@ -666,9 +647,7 @@ namespace Freesia.Internal
             if (_env.ContainsKey(t.Value)) return _env[t.Value].Type;
             var propname = t.Value;
             if (propname == UserFunctionNamespace)
-            {
                 return typeof(UserFunctionTypePlaceholder);
-            }
             var propInfo = typeof(T).GetPreferredPropertyType(propname);
             if (propInfo == null)
                 throw new ParseException($"Property '{t.Value}' is not found.", -1);
