@@ -7,10 +7,15 @@ namespace Freesia.Internal
 {
     internal class ASTBuilder
     {
+        private static ASTNode NopNode(CompilerToken parentNode)
+        {
+            return new ASTNode(new CompilerToken { Length = 0, Position = parentNode.Position, Type = TokenType.Nop, Value = "" });
+        }
+
         private static ASTNode MakeAst(CompilerToken op, ref Stack<ASTNode> values)
         {
-            var rhs = values.Pop();
-            var lhs = values.Pop();
+            var rhs = values.Count > 0 ? values.Pop() : NopNode(op);
+            var lhs = values.Count > 0 ? values.Pop() : NopNode(op);
             return op.Type == TokenType.Not
                 ? new ASTNode { Token = op, Left = rhs }
                 : new ASTNode { Token = op, Left = lhs, Right = rhs };

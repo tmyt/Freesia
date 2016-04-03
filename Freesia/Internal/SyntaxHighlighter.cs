@@ -159,7 +159,14 @@ namespace Freesia.Internal
                 {
                     pendingSymbols.Enqueue(t);
                     foreach (var s in TakeSymbols(enumerator)) pendingSymbols.Enqueue(s);
-                    t = enumerator.Current;
+                    try
+                    {
+                        t = enumerator.Current;
+                    }
+                    catch (InvalidOperationException)
+                    {
+                        break;
+                    }
                 }
                 // enter Lambda parsing mode
                 if (t.Type == TokenType.Lambda)

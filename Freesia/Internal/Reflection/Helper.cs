@@ -27,6 +27,7 @@ namespace Freesia.Internal.Reflection
                     var g = t.GenericTypeArguments;
                     for (var j = 0; j < g.Length; ++j)
                     {
+                        if (!g[j].IsGenericParameter) continue;
                         if (generics[g[j].Name] != null)
                         {
                             if (generics[g[j].Name] != argTypes[i].GenericTypeArguments[j])
