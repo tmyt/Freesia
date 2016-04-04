@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Freesia.Internal;
 using Freesia.Types;
 
@@ -18,7 +19,7 @@ namespace Freesia
         {
             var c = new ExpressionBuilder<T>();
             var ast = ASTBuilder.Generate(tokenList);
-            return c.CompileSyntax(ast);
+            return c.CompileSyntax(ast.FirstOrDefault());
         }
 
         public static Func<T, bool> Compile(string text)

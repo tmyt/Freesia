@@ -16,10 +16,11 @@ namespace Freesia.Internal
                 : new ASTNode { Token = op, Left = lhs, Right = rhs };
         }
 
-        private static ASTNode GenerateInternal(IEnumerable<CompilerToken> list)
+        private static IEnumerable<ASTNode> GenerateInternal(IEnumerable<CompilerToken> list)
         {
             var ops = new Stack<CompilerToken>();
             var values = new Stack<ASTNode>();
+            var trees = new List<ASTNode>();
             CompilerToken p1, p2 = null;
             var inArray = false;
             var inArgList = false;
@@ -28,6 +29,17 @@ namespace Freesia.Internal
                 var token = _token; // make writeable
                 p1 = p2;
                 p2 = token;
+                // take symbol continuasly, it's seems error. try to recovery it.
+                if (p2.IsSymbol && (p1?.IsSymbol).GetValueOrDefault())
+                {
+                    // pop all ops
+                    while (ops.Count != 0)
+                    {
+                        values.Push(MakeAst(ops.Pop(), ref values));
+                    }
+                    trees.Add(values.Pop());
+                    p1 = null;
+                }
                 // skip ArrayDelimiter token
                 if (inArray && token.Type == TokenType.ArrayDelimiter)
                     continue;
@@ -156,11 +168,12 @@ namespace Freesia.Internal
             {
                 values.Push(MakeAst(ops.Pop(), ref values));
             }
+            trees.Add(values.Pop());
             // this is AST
-            return values.Pop();
+            return trees;
         }
 
-        public static ASTNode Generate(IEnumerable<CompilerToken> list)
+        public static IEnumerable<ASTNode> Generate(IEnumerable<CompilerToken> list)
         {
             try
             {
