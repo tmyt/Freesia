@@ -16,6 +16,11 @@ namespace Freesia.Internal
                 : new ASTNode { Token = op, Left = lhs, Right = rhs };
         }
 
+        private static ASTNode MakeErrorNode()
+        {
+            return new ASTNode(new CompilerToken { Type = TokenType.Nop, Value = "*ERROR*", Length = 0, Position = -1 });
+        }
+
         private static IEnumerable<ASTNode> GenerateInternal(IEnumerable<CompilerToken> list)
         {
             var ops = new Stack<CompilerToken>();
@@ -163,9 +168,16 @@ namespace Freesia.Internal
                     values.Push(new ASTNode(new CompilerToken { Type = TokenType.Nop }));
                 }
             }
+            // return empty ast
+            if (values.Count == 0 && ops.Count == 0)
+            {
+                return new[] { MakeErrorNode()};
+            }
             // take all ops
             while (ops.Count != 0)
             {
+                if (ops.Peek().Type == TokenType.OpenBracket) { ops.Pop(); continue; }
+                if (values.Count == 1) { values.Push(MakeErrorNode()); }
                 values.Push(MakeAst(ops.Pop(), ref values));
             }
             trees.Add(values.Pop());

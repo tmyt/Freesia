@@ -61,6 +61,8 @@ namespace Freesia.Test
         [TestMethod]
         public void CompileTest()
         {
+            RunTest("true ture ture == false");
+
             // single value
             RunTest("text ==   'hoge'");
             RunTest("text ==i  'hoge'");
@@ -469,7 +471,7 @@ namespace Freesia.Test
             Assert.IsTrue(!completion.Any());
             Assert.AreEqual("", s);
             completion = FilterCompiler<TestClass>.Completion("ints.contains(x => x.c", out s);
-            Assert.AreEqual("chars", completion.First());
+            Assert.AreEqual("cast", completion.First());
             Assert.AreEqual("c", s);
             completion = FilterCompiler<TestClass>.Completion("text == 'a' || tex", out s);
             Assert.AreEqual("text", completion.First());
@@ -481,10 +483,13 @@ namespace Freesia.Test
             Assert.AreEqual("s", completion.First());
             Assert.AreEqual("", s);
             completion = FilterCompiler<TestClass>.Completion("ints[0].c", out s);
-            Assert.AreEqual("chars", completion.First());
+            Assert.AreEqual("cast", completion.First());
             Assert.AreEqual("c", s);
             Assert.AreEqual(FilterCompiler<TestClass>.Completion("", out s).Count(),
                 typeof(TestClass).GetProperties().Length + 1);
+            completion = FilterCompiler<TestClass>.Completion("ints.firstordefault().", out s);
+            Assert.IsTrue(!completion.Any());
+            Assert.AreEqual("", s);
         }
 
         [TestMethod]
