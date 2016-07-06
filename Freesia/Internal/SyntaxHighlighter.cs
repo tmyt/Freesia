@@ -179,7 +179,7 @@ namespace Freesia.Internal
             var argname = default(string);
             var argtype = default(Type);
             var latestResolvedType = default(Type);
-            var infos = HighlightOne(ASTBuilder.Generate(tokenList).First()); //ASTBuilder.Generate(tokenList).Select(HighlightOne).ToArray();
+            //var infos = HighlightOne(ASTBuilder.Generate(tokenList).First()); //ASTBuilder.Generate(tokenList).Select(HighlightOne).ToArray();
             var enumerator = tokenList.GetEnumerator();
             while (enumerator.MoveNext())
             {
