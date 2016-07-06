@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Freesia.Internal.Extensions;
 using Freesia.Internal.Reflection;
 using Freesia.Internal.Types;
@@ -111,7 +112,7 @@ namespace Freesia.Internal
                     syntaxType = propInfo == null ? SyntaxType.Error : SyntaxType.Identifier;
                     if (syntaxType == SyntaxType.Error && (targetType?.IsEnumerable() ?? false))
                     {
-                        syntaxType = Helper.EnumerableMethods.Value.Any(m => m.Name.ToLowerInvariant() == prop.Value.ToLowerInvariant())
+                        syntaxType = Helper.GetEnumerableExtendedMethods().Any(m => m == prop.Value.ToLowerInvariant())
                             ? SyntaxType.Identifier
                             : SyntaxType.Error;
                         targetType = null;

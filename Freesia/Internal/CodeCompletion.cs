@@ -62,7 +62,7 @@ namespace Freesia.Internal
                 .Select(p => p.Name)
                 .Concat(type == typeof(T) && !string.IsNullOrEmpty(UserFunctionNamespace) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
                 .Concat(type == typeof(UserFunctionTypePlaceholder) ? Functions.Keys : Enumerable.Empty<string>())
-                .Concat(type.IsEnumerable() ? Helper.EnumerableMethods.Value.Select(m => m.Name.ToLowerInvariant()).Distinct() : Enumerable.Empty<string>())
+                .Concat(type.IsEnumerable() ? Helper.GetEnumerableExtendedMethods() : Enumerable.Empty<string>())
                 .Select(s => s.ToLowerInvariant())
                 .Where(n => n.StartsWith(pp))
                 .OrderBy(s => s);
