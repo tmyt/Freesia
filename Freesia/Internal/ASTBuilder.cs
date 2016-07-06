@@ -21,10 +21,16 @@ namespace Freesia.Internal
                 : new ASTNode { Token = op, Left = lhs, Right = rhs };
         }
 
-        private static ASTNode GenerateInternal(IEnumerable<CompilerToken> list)
+        private static ASTNode MakeErrorNode()
+        {
+            return new ASTNode(new CompilerToken { Type = TokenType.Nop, Value = "*ERROR*", Length = 0, Position = -1 });
+        }
+
+        private static IEnumerable<ASTNode> GenerateInternal(IEnumerable<CompilerToken> list)
         {
             var ops = new Stack<CompilerToken>();
             var values = new Stack<ASTNode>();
+            var trees = new List<ASTNode>();
             CompilerToken p1, p2 = null;
             var inArray = false;
             foreach (var _token in list)
@@ -32,6 +38,17 @@ namespace Freesia.Internal
                 var token = _token; // make writeable
                 p1 = p2;
                 p2 = token;
+                // take symbol continuasly, it's seems error. try to recovery it.
+                if (p2.IsSymbol && (p1?.IsSymbol).GetValueOrDefault())
+                {
+                    // pop all ops
+                    while (ops.Count != 0)
+                    {
+                        values.Push(MakeAst(ops.Pop(), ref values));
+                    }
+                    trees.Add(values.Pop());
+                    p1 = null;
+                }
                 // skip ArrayDelimiter token
                 if (inArray && token.Type == TokenType.ArrayDelimiter)
                     continue;
@@ -148,16 +165,24 @@ namespace Freesia.Internal
                 if (token.Type == TokenType.Not)
                     values.Push(new ASTNode(new CompilerToken { Type = TokenType.Nop }));
             }
+            // return empty ast
+            if (values.Count == 0 && ops.Count == 0)
+            {
+                return new[] { MakeErrorNode()};
+            }
             // take all ops
             while (ops.Count != 0)
             {
+                if (ops.Peek().Type == TokenType.OpenBracket) { ops.Pop(); continue; }
+                if (values.Count == 1) { values.Push(MakeErrorNode()); }
                 values.Push(MakeAst(ops.Pop(), ref values));
             }
+            trees.Add(values.Pop());
             // this is AST
-            return values.Pop();
+            return trees;
         }
 
-        public static ASTNode Generate(IEnumerable<CompilerToken> list)
+        public static IEnumerable<ASTNode> Generate(IEnumerable<CompilerToken> list)
         {
             try
             {

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Freesia.Internal.Extensions;
 using Freesia.Internal.Reflection;
 using Freesia.Internal.Types;
@@ -28,6 +29,9 @@ namespace Freesia.Internal
                 case TokenType.GreaterThan:
                 case TokenType.LessThanEquals:
                 case TokenType.GreaterThanEquals:
+                case TokenType.NotRegexp:
+                case TokenType.NotContains:
+                case TokenType.NotContainsI:
                 case TokenType.OpenBracket:
                 case TokenType.CloseBracket:
                 case TokenType.ArrayStart:
@@ -36,16 +40,25 @@ namespace Freesia.Internal
                 case TokenType.IndexerStart:
                 case TokenType.IndexerEnd:
                 case TokenType.Lambda:
-                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Operator, Value = t.Value };
+                case TokenType.ArrayNode:
+                case TokenType.IndexerNode:
+                case TokenType.PropertyAccess:
+                case TokenType.InvokeMethod:
+                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Operator, Value = t.Value, TypeInfo = null };
                 case TokenType.String:
-                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.String, Value = t.Value };
+                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.String, Value = t.Value, TypeInfo = typeof(string) };
                 case TokenType.Double:
+                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Constant, Value = t.Value, TypeInfo = typeof(double) };
                 case TokenType.Long:
+                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Constant, Value = t.Value, TypeInfo = typeof(long) };
                 case TokenType.ULong:
-                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Constant, Value = t.Value };
+                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Constant, Value = t.Value, TypeInfo = typeof(ulong) };
                 case TokenType.Bool:
+                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Keyword, Value = t.Value, TypeInfo = typeof(bool) };
                 case TokenType.Null:
-                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Keyword, Value = t.Value };
+                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Keyword, Value = t.Value, TypeInfo = null };
+                case TokenType.Symbol:
+                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Identifier, Value = t.Value, TypeInfo = null /* to be determin */ };
                 default:
                     throw new ParseException("#-1", t.Position);
             }
@@ -111,7 +124,7 @@ namespace Freesia.Internal
                     syntaxType = propInfo == null ? SyntaxType.Error : SyntaxType.Identifier;
                     if (syntaxType == SyntaxType.Error && (targetType?.IsEnumerable() ?? false))
                     {
-                        syntaxType = Helper.EnumerableMethods.Value.Any(m => m.Name.ToLowerInvariant() == prop.Value.ToLowerInvariant())
+                        syntaxType = Helper.GetEnumerableExtendedMethods().Any(m => m == prop.Value.ToLowerInvariant())
                             ? SyntaxType.Identifier
                             : SyntaxType.Error;
                         targetType = null;
@@ -141,6 +154,22 @@ namespace Freesia.Internal
             }
         }
 
+        private static Type GetPropertyType(Type type, string name)
+        {
+            return type.GetRuntimeProperties().Where(p => p.Name.ToLowerInvariant() == name.ToLowerInvariant()).Select(p => p.PropertyType).FirstOrDefault();
+        }
+
+        private static IEnumerable<SyntaxInfo> HighlightOne(ASTNode node)
+        {
+            if (node == null) yield break;
+            var info = TranslateSyntaxInfo(node.Token);
+            var lhs = HighlightOne(node.Left).ToList();
+            var rhs = HighlightOne(node.Right).ToList();
+            foreach (var i in lhs) yield return i;
+            yield return info;
+            foreach (var i in rhs) yield return i;
+        }
+
         public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<CompilerToken> tokenList)
         {
             var pendingSymbols = new Queue<CompilerToken>();
@@ -150,6 +179,7 @@ namespace Freesia.Internal
             var argname = default(string);
             var argtype = default(Type);
             var latestResolvedType = default(Type);
+            //var infos = HighlightOne(ASTBuilder.Generate(tokenList).First()); //ASTBuilder.Generate(tokenList).Select(HighlightOne).ToArray();
             var enumerator = tokenList.GetEnumerator();
             while (enumerator.MoveNext())
             {

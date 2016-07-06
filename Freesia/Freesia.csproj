@@ -42,6 +42,7 @@
     <Compile Include="FilterCompiler.cs" />
     <Compile Include="Internal\ASTBuilder.cs" />
     <Compile Include="Internal\ExpressionBuilder.cs" />
+    <Compile Include="Internal\Extensions\EnumerableEx.cs" />
     <Compile Include="Internal\Extensions\TypeExtensions.cs" />
     <Compile Include="Internal\Reflection\Cache.cs" />
     <Compile Include="Internal\Reflection\Helper.cs" />

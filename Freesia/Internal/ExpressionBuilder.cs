@@ -387,7 +387,7 @@ namespace Freesia.Internal
             var methodName = lhs.Right.Token.Value.ToLowerInvariant();
             var info = Helper.FindPreferredMethod(methodName, argTypes);
             if (info == null)
-                throw new ParseException($"Could not found preferred method {methodName}.", lhs.Right.Token.Position);
+                throw new ParseException($"Could not found preferred method '{methodName}'.", lhs.Right.Token.Position);
             var callExpr = Expression.Call(info, args);
             // TODO: Null check
             //return MayNullable(rootExpr) ? Expression.(MakeValidation(rootExpr), callExpr) : (Expression)callExpr;
