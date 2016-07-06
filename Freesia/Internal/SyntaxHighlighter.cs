@@ -124,7 +124,7 @@ namespace Freesia.Internal
                     syntaxType = propInfo == null ? SyntaxType.Error : SyntaxType.Identifier;
                     if (syntaxType == SyntaxType.Error && (targetType?.IsEnumerable() ?? false))
                     {
-                        syntaxType = Helper.EnumerableMethods.Value.Any(m => m.Name.ToLowerInvariant() == prop.Value.ToLowerInvariant())
+                        syntaxType = Helper.GetEnumerableExtendedMethods().Any(m => m == prop.Value.ToLowerInvariant())
                             ? SyntaxType.Identifier
                             : SyntaxType.Error;
                         targetType = null;
