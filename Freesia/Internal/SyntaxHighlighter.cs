@@ -162,6 +162,7 @@ namespace Freesia.Internal
         private static IEnumerable<SyntaxInfo> HighlightOne(ASTNode node)
         {
             if (node == null) yield break;
+            if (node.Token.Type == TokenType.Nop) yield break;
             var info = TranslateSyntaxInfo(node.Token);
             var lhs = HighlightOne(node.Left).ToList();
             var rhs = HighlightOne(node.Right).ToList();
