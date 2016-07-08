@@ -50,6 +50,7 @@ namespace Freesia.Internal.Reflection
                     if (@params[i].ParameterType != argTypes[i]) return null;
                 }
             }
+            if (!m.IsGenericMethodDefinition) return m;
             return m.MakeGenericMethod(m.GetGenericArguments().Select(x => generics[x.Name]).ToArray());
         }
 
@@ -60,6 +61,13 @@ namespace Freesia.Internal.Reflection
                 .Where(m => m.GetParameters().Length == argTypes.Length)
                 .Select(m => MakePreferredMethod(m, argTypes))
                 .FirstOrDefault(x => x != null);
+        }
+
+        private static bool MatchArgTypes(MethodInfo m, Type[] argTypes)
+        {
+            var paramTypes = m.GetParameters();
+            if (paramTypes.Length != argTypes.Length) return false;
+            return paramTypes.Select(p => p.ParameterType).SequenceEqual(argTypes);
         }
 
 #if false // may be unused
@@ -90,6 +98,7 @@ namespace Freesia.Internal.Reflection
             var name = methodName.ToLowerInvariant();
             return EnumerableMethods.Value.Where(m => m.Name.ToLowerInvariant() == name)
                 .Where(m => m.GetParameters().Length == argTypes.Length)
+                .Where(m => m.IsGenericMethodDefinition || MatchArgTypes(m, argTypes))
                 .Select(m => MakePreferredMethod(m, argTypes))
                 .FirstOrDefault(x => x != null) ?? FindPreferredExtraMethod(methodName, argTypes);
         }
