@@ -170,6 +170,15 @@ namespace Freesia.Internal
             foreach (var i in rhs) yield return i;
         }
 
+        private static IEnumerable<SyntaxInfo> SyntaxHighlightAST(IEnumerable<ASTNode> nodes)
+        {
+            if (nodes == null) yield break;
+            foreach (var i in nodes.SelectMany(HighlightOne))
+            {
+                yield return i;
+            }
+        }
+
         public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<CompilerToken> tokenList)
         {
             var pendingSymbols = new Queue<CompilerToken>();
@@ -179,7 +188,7 @@ namespace Freesia.Internal
             var argname = default(string);
             var argtype = default(Type);
             var latestResolvedType = default(Type);
-            //var infos = HighlightOne(ASTBuilder.Generate(tokenList).First()); //ASTBuilder.Generate(tokenList).Select(HighlightOne).ToArray();
+            var infos = SyntaxHighlightAST(ASTBuilder.Generate(tokenList)).OrderBy(x => x.Position).ToArray(); //ASTBuilder.Generate(tokenList).Select(HighlightOne).ToArray();
             var enumerator = tokenList.GetEnumerator();
             while (enumerator.MoveNext())
             {
@@ -189,7 +198,14 @@ namespace Freesia.Internal
                 {
                     pendingSymbols.Enqueue(t);
                     foreach (var s in TakeSymbols(enumerator)) pendingSymbols.Enqueue(s);
-                    t = enumerator.Current;
+                    try
+                    {
+                        t = enumerator.Current;
+                    }
+                    catch
+                    {
+                        break;
+                    }
                 }
                 // enter Lambda parsing mode
                 if (t.Type == TokenType.Lambda)
