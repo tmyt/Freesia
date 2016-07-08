@@ -186,7 +186,7 @@ namespace Freesia.Internal
             while (ops.Count != 0)
             {
                 if (ops.Peek().Type == TokenType.OpenBracket) { ops.Pop(); continue; }
-                if (values.Count == 1) { values.Push(MakeErrorNode()); }
+                if (values.Count == 1) { values.Push(null); }
                 values.Push(MakeAst(ops.Pop(), ref values));
             }
             trees.Add(values.Pop());
