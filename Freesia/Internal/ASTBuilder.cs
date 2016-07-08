@@ -7,10 +7,15 @@ namespace Freesia.Internal
 {
     internal class ASTBuilder
     {
+        private static ASTNode NopNode(CompilerToken parentNode)
+        {
+            return new ASTNode(new CompilerToken { Length = 0, Position = parentNode.Position, Type = TokenType.Nop, Value = "" });
+        }
+
         private static ASTNode MakeAst(CompilerToken op, ref Stack<ASTNode> values)
         {
-            var rhs = values.Pop();
-            var lhs = values.Pop();
+            var rhs = values.Count > 0 ? values.Pop() : NopNode(op);
+            var lhs = values.Count > 0 ? values.Pop() : NopNode(op);
             return op.Type == TokenType.Not
                 ? new ASTNode { Token = op, Left = rhs }
                 : new ASTNode { Token = op, Left = lhs, Right = rhs };
@@ -28,7 +33,6 @@ namespace Freesia.Internal
             var trees = new List<ASTNode>();
             CompilerToken p1, p2 = null;
             var inArray = false;
-            var inArgList = false;
             var needRhs = false;
             foreach (var _token in list)
             {
@@ -133,9 +137,7 @@ namespace Freesia.Internal
                     ops.Pop();
                     // for zero arguments
                     if (nopBracket && ops.Count > 0 && ops.Peek().Type == TokenType.InvokeMethod)
-                    {
                         values.Push(new ASTNode(new CompilerToken { Type = TokenType.Nop }));
-                    }
                     continue;
                 }
                 // found '('
@@ -145,7 +147,6 @@ namespace Freesia.Internal
                         || p1.Type == TokenType.PropertyAccess
                         || p1.Type == TokenType.IndexerNode))
                     {
-                        inArgList = true;
                         token = new CompilerToken { Type = TokenType.InvokeMethod, Value = "()", Length = 1, Position = token.Position };
                     }
                     else
@@ -172,14 +173,10 @@ namespace Freesia.Internal
                 ops.Push(token);
                 // add '(' for MethodInvoke
                 if (token.Type == TokenType.InvokeMethod)
-                {
                     ops.Push(new CompilerToken { Type = TokenType.OpenBracket, Value = "(", Length = 1, Position = token.Position });
-                }
                 // add pseudo value
                 if (token.Type == TokenType.Not)
-                {
                     values.Push(new ASTNode(new CompilerToken { Type = TokenType.Nop }));
-                }
             }
             // return empty ast
             if (values.Count == 0 && ops.Count == 0)
