@@ -264,6 +264,12 @@ namespace Freesia.Internal
                         break;
                 }
             }
+            // 文字列のきれっぱしをちゃんと処理してあげる
+            if (quote)
+            {
+                // ここに来るときは長さ0の文字列のはず…
+                yield return new CompilerToken { Type = TokenType.String, Value = "", Position = start, Length = 1 };
+            }
         }
 
         public Tokenizer(string text)
