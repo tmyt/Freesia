@@ -11,6 +11,7 @@ namespace Freesia.Internal.Types
         public CompilerToken Token { get; set; }
         public ASTNode Left { get; set; }
         public ASTNode Right { get; set; }
+        public Type DeterminedType { get; set; }
 
         public ASTNode() { }
         public ASTNode(CompilerToken token)

@@ -16,7 +16,7 @@ namespace Freesia.Internal.Reflection
                 .Where(m => Nullable.GetUnderlyingType(m.ReturnType) == null)
                 .ToList());
 
-        public static Lazy<List<MethodInfo>> EnumerableExtraMethods =
+        private static Lazy<List<MethodInfo>> EnumerableExtraMethods =
             new Lazy<List<MethodInfo>>(() => typeof(EnumerableEx).GetRuntimeMethods()
                 .Where(m => m.IsPublic && m.IsStatic) // only public static
                 .Where(m => m.IsDefined(typeof(ExtensionAttribute), false))
@@ -30,7 +30,7 @@ namespace Freesia.Internal.Reflection
             for (var i = 0; i < @params.Length; ++i)
             {
                 var t = @params[i].ParameterType;
-                if (t.IsConstructedGenericType)
+                if (t.IsConstructedGenericType && (argTypes[i]?.IsConstructedGenericType ?? false))
                 {
                     var g = t.GenericTypeArguments;
                     for (var j = 0; j < g.Length; ++j)
@@ -100,5 +100,10 @@ namespace Freesia.Internal.Reflection
                 .Concat(EnumerableExtraMethods.Value.Select(m => m.Name.ToLowerInvariant()))
                 .Distinct();
         }
+
+        public static IEnumerable<MethodInfo> GetEnumerableExtendedMethodInfos()
+        {
+            return EnumerableMethods.Value.Concat(EnumerableExtraMethods.Value);
+        } 
     }
 }

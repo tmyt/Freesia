@@ -29,42 +29,42 @@ namespace Freesia.Internal
         {
             var c = new Tokenizer(text);
             var syntax = FilterCompiler<T>.SyntaxHighlight(c.Parse(true)).ToArray();
-            var q = TakeSymbols(syntax.Reverse()).ToList();
+            var last = syntax.LastOrDefault();
             prefix = "";
-            if (text.EndsWith("'") || text.EndsWith("\"")) return new List<string>();
-            var last = q.FirstOrDefault();
-            // 末尾が文字列なら空
-            if (syntax.LastOrDefault()?.Type == SyntaxType.String) return new List<string>();
             // 末尾がnullならtypeof(T)のプロパティ
             if (last == null) return typeof(T).GetRuntimeProperties()
                  .Select(p => p.Name)
                  .Concat(string.IsNullOrEmpty(UserFunctionNamespace) ? Enumerable.Empty<string>() : new[] { UserFunctionNamespace })
                  .Select(s => s.ToLowerInvariant())
                  .OrderBy(s => s);
-            // 末尾が '[', ']' なら空
-            if (last.SubType == TokenType.IndexerStart) return new List<string>();
-            if (last.SubType == TokenType.IndexerEnd) return new List<string>();
-            // 最後が '.' ならプロパティを見る
-            var lookup = last.SubType == TokenType.PropertyAccess;
-            var type = lookup ? q.Skip(1).FirstOrDefault()?.TypeInfo : default(Type);
-            // 末尾がエラーなら直前の要素
+            // 末尾がstring,(),indexerなら空
+            if (last.SubType == TokenType.String) return Enumerable.Empty<string>();
+            // プロパティ/メソッドを検索
+            var type = last.TypeInfo;
+            var lookup = last.Value;
+            if (last.SubType == TokenType.PropertyAccess)
+            {
+                lookup = "";
+            }
             if (last.Type == SyntaxType.Error)
             {
-                type = q.Count > 2 ? q.Skip(2).FirstOrDefault()?.TypeInfo : typeof(T);
+                if (syntax.Length == 1)
+                {
+                    type = typeof(T);
+                }
+                else
+                {
+                    type = syntax.Reverse().Skip(1).First().TypeInfo;
+                }
             }
-            // 2個以上エラーは空
-            if (q.Count(t => t.Type == SyntaxType.Error) > 1) return new List<string>();
-            if (type == null) return new List<string>();
-            // 絞り込み文字列
-            var pp = prefix = lookup ? "" : q[0].Value;
-            // プロパティ一覧を返却
+            if (type == null) return Enumerable.Empty<string>();
             return type.GetRuntimeProperties()
                 .Select(p => p.Name)
                 .Concat(type == typeof(T) && !string.IsNullOrEmpty(UserFunctionNamespace) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
                 .Concat(type == typeof(UserFunctionTypePlaceholder) ? Functions.Keys : Enumerable.Empty<string>())
                 .Concat(type.IsEnumerable() ? Helper.GetEnumerableExtendedMethods() : Enumerable.Empty<string>())
                 .Select(s => s.ToLowerInvariant())
-                .Where(n => n.StartsWith(pp))
+                .Where(n => n.StartsWith(lookup))
                 .OrderBy(s => s);
         }
     }

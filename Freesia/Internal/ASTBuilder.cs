@@ -29,6 +29,7 @@ namespace Freesia.Internal
             CompilerToken p1, p2 = null;
             var inArray = false;
             var inArgList = false;
+            var needRhs = false;
             foreach (var _token in list)
             {
                 var token = _token; // make writeable
@@ -59,9 +60,12 @@ namespace Freesia.Internal
                     throw new ParseException("Array elements must be delimitered ','.", -1);
                 // enter Array parsing
                 if (token.Type == TokenType.ArrayStart) inArray = true;
+                // check arg needed
+                if (token.Type == TokenType.PropertyAccess) needRhs = true;
                 // correct token
                 if (token.IsSymbol || token.Type == TokenType.ArrayStart || token.Type == TokenType.IndexerStart)
                 {
+                    needRhs = false;
                     values.Push(new ASTNode(token));
                     continue;
                 }
@@ -181,6 +185,11 @@ namespace Freesia.Internal
             if (values.Count == 0 && ops.Count == 0)
             {
                 return new[] { MakeErrorNode() };
+            }
+            // push null if needed
+            if (needRhs)
+            {
+                values.Push(null);
             }
             // take all ops
             while (ops.Count != 0)

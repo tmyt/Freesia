@@ -11,6 +11,8 @@ namespace Freesia.Internal
 {
     internal class SyntaxHighlighter<T> : CompilerConfig<T>
     {
+        private class ExtendedMethodPlaceholder { }
+
         private static SyntaxInfo TranslateSyntaxInfo(CompilerToken t)
         {
             switch (t.Type)
@@ -159,22 +161,138 @@ namespace Freesia.Internal
             return type.GetRuntimeProperties().Where(p => p.Name.ToLowerInvariant() == name.ToLowerInvariant()).Select(p => p.PropertyType).FirstOrDefault();
         }
 
-        private static IEnumerable<SyntaxInfo> HighlightOne(ASTNode node)
+        private static bool IsExtendedMethod(Type type, string name)
+        {
+            if (!type.IsEnumerable()) return false;
+            return Helper.GetEnumerableExtendedMethods().Any(m => name == m);
+        }
+
+        private static IEnumerable<MethodInfo> GetMethodInfo(Type type, string name)
+        {
+            return Helper.GetEnumerableExtendedMethodInfos().Where(m => m.Name.ToLowerInvariant() == name);
+        }
+
+        private static IEnumerable<SyntaxInfo> HighlightOne(ASTNode node, Type parentNodeType = null, ASTNode lambdaArg = null)
         {
             if (node == null) yield break;
             if (node.Token.Type == TokenType.Nop) yield break;
             var info = TranslateSyntaxInfo(node.Token);
-            var lhs = HighlightOne(node.Left).ToList();
-            var rhs = HighlightOne(node.Right).ToList();
+            parentNodeType = parentNodeType ?? typeof(T);
+
+            // determine identifier type
+            if (info.Type == SyntaxType.Identifier && info.TypeInfo == null)
+            {
+                info.TypeInfo = GetPropertyType(parentNodeType, info.Value);
+                if (lambdaArg != null && node.Token.Value == lambdaArg.Token.Value)
+                {
+                    info.TypeInfo = node.DeterminedType = lambdaArg.DeterminedType;
+                    info.Type = SyntaxType.Identifier;
+                }
+                if (info.TypeInfo == null)
+                {
+                    info.TypeInfo = IsExtendedMethod(parentNodeType, info.Value) ? typeof(ExtendedMethodPlaceholder) : null;
+                }
+                if (info.TypeInfo == null)
+                {
+                    info.Type = SyntaxType.Error;
+                }
+            }
+            // override node type info
+            if (node.DeterminedType == null) node.DeterminedType = info.TypeInfo;
+
+            // process left node (and update ``node.Left.DeterminedType'' value)
+            var lhs = HighlightOne(node.Left, parentNodeType, lambdaArg).ToList();
+            // process right node
+            var rhs = HighlightOne(node.Right, node.Left?.DeterminedType, lambdaArg).ToList();
+
+            // determine operator node type
+            if (info.Type == SyntaxType.Operator)
+            {
+                if (info.SubType == TokenType.PropertyAccess)
+                {
+                    // propergate lhs type
+                    node.DeterminedType = info.TypeInfo = node.Right?.DeterminedType ?? node.Left?.DeterminedType;
+                }
+                else if (info.SubType == TokenType.IndexerNode)
+                {
+                    // propergate lhs type
+                    node.DeterminedType = info.TypeInfo = node.Left.DeterminedType.GetUnderlyingElementType();
+                }
+                else if (info.SubType == TokenType.InvokeMethod)
+                {
+                    // if left side node type is not ExtendedMethodPlaceholder
+                    if (node.Left?.DeterminedType != typeof(ExtendedMethodPlaceholder))
+                    {
+                        lhs.Last(x => x.Position == node.Left.Right.Token.Position).Type = SyntaxType.Error;
+                    }
+                    else
+                    {
+                        var ie = node.Left.Left.DeterminedType; // target IE<T>
+                        var methods = GetMethodInfo(ie, node.Left.Right.Token.Value).ToArray();
+                        var args = ExpandArguments(node.Right).ToArray();
+                        if (methods.All(m => m.GetParameters().Length != args.Length + 1))
+                        {
+                            lhs.Last(x => x.Position == node.Left.Right.Token.Position).Type = SyntaxType.Error;
+                        }
+                        else
+                        {
+                            var elementType = ie.GetUnderlyingElementType();
+                            foreach (var arg in args)
+                            {
+                                if (arg.Token.Type != TokenType.Lambda) continue;
+                                // update lambda related ast
+                                arg.Left.DeterminedType = elementType;
+                                var lambda = HighlightOne(arg.Right, null, arg.Left).ToList();
+                                foreach (var s in lambda)
+                                {
+                                    var z = rhs.First(x => x.Position == s.Position);
+                                    z.TypeInfo = s.TypeInfo;
+                                    z.Type = s.Type;
+                                }
+                                rhs.Last(x => x.Position == arg.Left.Token.Position).Type = SyntaxType.Identifier;
+                                arg.DeterminedType = GetDelegateType(elementType, arg.Right.DeterminedType);
+                            }
+                            // fill generic parameter
+                            var method = Helper.FindPreferredMethod(node.Left.Right.Token.Value,
+                                new[] { ie.GetUnderlyingEnumerableType() }.Concat(args.Select(x => x.DeterminedType)).ToArray());
+                            info.TypeInfo = node.DeterminedType = method?.ReturnType;
+                        }
+                    }
+                }
+                else
+                {
+                    node.DeterminedType = info.TypeInfo = typeof(bool);
+                }
+            }
+
+            // build enumerable
             foreach (var i in lhs) yield return i;
             yield return info;
             foreach (var i in rhs) yield return i;
         }
 
+        private static Type GetDelegateType(Type elementType, Type determinedType)
+        {
+            return typeof(Func<,>).MakeGenericType(elementType, determinedType);
+        }
+
+        private static IEnumerable<ASTNode> ExpandArguments(ASTNode node)
+        {
+            if (node == null) yield break;
+            if (node.Token.Type == TokenType.Nop) { yield break; }
+            if (node.Token.Type == TokenType.ArrayDelimiter)
+            {
+                foreach (var n in ExpandArguments(node.Left)) { yield return n; }
+                foreach (var n in ExpandArguments(node.Right)) { yield return n; }
+                yield break;
+            }
+            yield return node;
+        }
+
         private static IEnumerable<SyntaxInfo> SyntaxHighlightAST(IEnumerable<ASTNode> nodes)
         {
             if (nodes == null) yield break;
-            foreach (var i in nodes.SelectMany(HighlightOne))
+            foreach (var i in nodes.SelectMany(n => HighlightOne(n)))
             {
                 yield return i;
             }
@@ -182,86 +300,8 @@ namespace Freesia.Internal
 
         public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<CompilerToken> tokenList)
         {
-            var pendingSymbols = new Queue<CompilerToken>();
-            var lambdaParsing = false;
-            var brackets = 0;
-            var argstack = new Stack<Tuple<string, Type, int>>();
-            var argname = default(string);
-            var argtype = default(Type);
-            var latestResolvedType = default(Type);
             var infos = SyntaxHighlightAST(ASTBuilder.Generate(tokenList)).OrderBy(x => x.Position).ToArray(); //ASTBuilder.Generate(tokenList).Select(HighlightOne).ToArray();
-            var enumerator = tokenList.GetEnumerator();
-            while (enumerator.MoveNext())
-            {
-                var t = enumerator.Current;
-                // read symbols
-                if (t.Type == TokenType.Symbol || t.Type == TokenType.PropertyAccess)
-                {
-                    pendingSymbols.Enqueue(t);
-                    foreach (var s in TakeSymbols(enumerator)) pendingSymbols.Enqueue(s);
-                    try
-                    {
-                        t = enumerator.Current;
-                    }
-                    catch
-                    {
-                        break;
-                    }
-                }
-                // enter Lambda parsing mode
-                if (t.Type == TokenType.Lambda)
-                {
-                    // save current state
-                    if (lambdaParsing)
-                    {
-                        argstack.Push(Tuple.Create(argname, argtype, brackets));
-                    }
-                    lambdaParsing = true;
-                    brackets = 1;
-                    var arg = pendingSymbols.Dequeue();
-                    yield return new SyntaxInfo(arg, SyntaxType.Argument);
-                    yield return new SyntaxInfo(t, SyntaxType.Operator);
-                    argname = arg.Value;
-                    argtype = latestResolvedType?.GetUnderlyingElementType();
-                    pendingSymbols.Clear();
-                    continue;
-                }
-                if (lambdaParsing)
-                {
-                    if (t.Type == TokenType.OpenBracket) { brackets++; }
-                    if (t.Type == TokenType.CloseBracket) { brackets--; }
-                }
-                if (pendingSymbols.Count > 0)
-                {
-                    foreach (var a in ParseSymbolType(pendingSymbols, argtype, argname))
-                    {
-                        if (a.TypeInfo != null) latestResolvedType = a.TypeInfo;
-                        yield return a;
-                    }
-                    pendingSymbols.Clear();
-                }
-                if (lambdaParsing && brackets == 0)
-                {
-                    lambdaParsing = false;
-                    argname = null;
-                    // restore previews environment
-                    if (argstack.Count > 0)
-                    {
-                        var prev = argstack.Pop();
-                        argname = prev.Item1;
-                        argtype = prev.Item2;
-                        brackets = prev.Item3;
-                        lambdaParsing = true;
-                    }
-                }
-                // process rest of token
-                if (t.Type != TokenType.Symbol && t.Type != TokenType.PropertyAccess)
-                {
-                    yield return TranslateSyntaxInfo(t);
-                }
-            }
-            // 残ってたら全部出す
-            foreach (var a in ParseSymbolType(pendingSymbols, argtype, argname)) yield return a;
+            return infos;
         }
     }
 }
