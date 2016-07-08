@@ -47,7 +47,10 @@ namespace Freesia.Internal
                 }
                 // skip ArrayDelimiter token
                 if (inArray && token.Type == TokenType.ArrayDelimiter)
+                {
+                    values.Push(new ASTNode(new CompilerToken { Type = TokenType.ArrayDelimiter, Value = ",", Length = 1, Position = token.Position }));
                     continue;
+                }
                 // break Array parsing
                 if (token.Type == TokenType.ArrayEnd) inArray = false;
                 // check ArrayDelimiter
@@ -69,13 +72,19 @@ namespace Freesia.Internal
                     var arrayNode = new ASTNode();
                     while (node.Token.Type != TokenType.ArrayStart)
                     {
-                        if (arrayNode.Right == null) { arrayNode.Right = node; }
-                        else if (arrayNode.Left == null) { arrayNode.Left = node; }
-                        else
+                        if (node.Token.Type == TokenType.ArrayDelimiter)
                         {
-                            arrayNode.Token = new CompilerToken { Type = TokenType.ArrayDelimiter, Value = ",", Length = 1 };
-                            arrayNode = new ASTNode { Right = arrayNode, Left = node };
+                            if (arrayNode.Token == null)
+                            {
+                                arrayNode.Token = node.Token;
+                            }
+                            else
+                            {
+                                arrayNode = new ASTNode {Right = arrayNode, Token = node.Token};   
+                            }
                         }
+                        else if (arrayNode.Right == null) { arrayNode.Right = node; }
+                        else if (arrayNode.Left == null) { arrayNode.Left = node; }
                         values.Pop();
                         node = values.Peek();
                     }
@@ -171,7 +180,7 @@ namespace Freesia.Internal
             // return empty ast
             if (values.Count == 0 && ops.Count == 0)
             {
-                return new[] { MakeErrorNode()};
+                return new[] { MakeErrorNode() };
             }
             // take all ops
             while (ops.Count != 0)
