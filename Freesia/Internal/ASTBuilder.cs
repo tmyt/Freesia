@@ -88,7 +88,7 @@ namespace Freesia.Internal
                         values.Pop();
                         node = values.Peek();
                     }
-                    arrayNode.Token = new CompilerToken { Type = TokenType.ArrayNode, Value = "{}", Length = 2, Position = node.Token.Position };
+                    arrayNode.Token = new CompilerToken { Type = TokenType.ArrayNode, Value = "{}", Length = 1, Position = node.Token.Position };
                     if (arrayNode.Left == null)
                     {
                         arrayNode.Left = arrayNode.Right;
@@ -112,7 +112,7 @@ namespace Freesia.Internal
                         values.Pop();
                         node = values.Peek();
                     }
-                    indexerNode.Token = new CompilerToken { Type = TokenType.IndexerNode, Value = "[]", Length = 2, Position = node.Token.Position };
+                    indexerNode.Token = new CompilerToken { Type = TokenType.IndexerNode, Value = "[]", Length = 1, Position = node.Token.Position };
                     values.Pop();
                     indexerNode.Left = values.Pop();
                     values.Push(indexerNode);
@@ -142,7 +142,7 @@ namespace Freesia.Internal
                         || p1.Type == TokenType.IndexerNode))
                     {
                         inArgList = true;
-                        token = new CompilerToken { Type = TokenType.InvokeMethod, Value = "()", Length = 2, Position = token.Position };
+                        token = new CompilerToken { Type = TokenType.InvokeMethod, Value = "()", Length = 1, Position = token.Position };
                     }
                     else
                     {
