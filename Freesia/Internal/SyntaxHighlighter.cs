@@ -91,7 +91,7 @@ namespace Freesia.Internal
             // determine operator node type
             var info = TranslateSyntaxInfo(node.Token);
             // determine identifier type
-            if (node.Token.Type == TokenType.Symbol && node.DeterminedType == null)
+            if (node.Token.Type == TokenType.Symbol)
             {
                 node.DeterminedType = GetPropertyType(parentNodeType, node.Token.Value);
                 if (lambdaArg != null && node.Token.Value == lambdaArg.Token.Value)
@@ -189,6 +189,7 @@ namespace Freesia.Internal
         private static IEnumerable<ASTNode> ExpandArguments(ASTNode node)
         {
             if (node == null) yield break;
+            if (node.Token.Type == TokenType.CloseBracket) { yield break; }
             if (node.Token.Type == TokenType.Nop) { yield break; }
             if (node.Token.Type == TokenType.ArrayDelimiter)
             {
