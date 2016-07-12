@@ -109,5 +109,6 @@ namespace Freesia.Types
         Bool,
         Null,
         Nop,
+        Error,
     }
 }

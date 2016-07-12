@@ -61,6 +61,8 @@ namespace Freesia.Internal
                     return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Keyword, Value = t.Value, TypeInfo = null };
                 case TokenType.Symbol:
                     return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Identifier, Value = t.Value, TypeInfo = null /* to be determin */ };
+                case TokenType.Error:
+                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Error, Value = t.Value ?? "", TypeInfo = null };
                 default:
                     throw new ParseException("#-1", t.Position);
             }
@@ -91,6 +93,7 @@ namespace Freesia.Internal
             // determine operator node type
             var info = TranslateSyntaxInfo(node.Token);
             // determine identifier type
+            if (node.Token.Type == TokenType.Error) return;
             if (node.Token.Type == TokenType.Symbol)
             {
                 node.DeterminedType = GetPropertyType(parentNodeType, node.Token.Value);

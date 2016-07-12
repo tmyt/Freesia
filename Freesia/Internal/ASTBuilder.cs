@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Freesia.Internal.Types;
 using Freesia.Types;
 
@@ -120,6 +121,7 @@ namespace Freesia.Internal
                         values.Pop();
                         node = values.Peek();
                     }
+                    if (!valueTaken) throw new ParseException("Indexer should be one token.", node.Token.Position);
                     indexerNode.Token = new CompilerToken { Type = TokenType.IndexerNode, Value = "[", Length = 1, Position = node.Token.Position };
                     values.Pop();
                     indexerNode.Left = values.Pop();
@@ -188,6 +190,14 @@ namespace Freesia.Internal
             {
                 values.Push(null);
             }
+            // treat to err node
+            var errAst = new List<ASTNode>();
+            while (values.Any(x => x.Token.Type == TokenType.IndexerStart)
+                   || values.Any(x => x.Token.Type == TokenType.ArrayStart))
+            {
+                errAst.Add(values.Pop());
+                errAst.Last().Token.Type = TokenType.Error;
+            }
             // take all ops
             while (ops.Count != 0)
             {
@@ -196,6 +206,7 @@ namespace Freesia.Internal
                 values.Push(MakeAst(ops.Pop(), ref values));
             }
             trees.Add(values.Pop());
+            trees.AddRange(errAst);
             // this is AST
             return trees;
         }
