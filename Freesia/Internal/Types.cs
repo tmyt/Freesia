@@ -19,6 +19,11 @@ namespace Freesia.Internal.Types
             this.Token = token;
         }
 
+        public override string ToString()
+        {
+            return Dump();
+        }
+
         internal string Dump()
         {
             return $"<{Left?.Dump()} {Token} {Right?.Dump()}>";
