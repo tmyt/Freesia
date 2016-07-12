@@ -9,20 +9,6 @@ namespace Freesia.Internal
 {
     internal class CodeCompletion<T> : CompilerConfig<T>
     {
-        private static IEnumerable<SyntaxInfo> TakeSymbols(IEnumerable<SyntaxInfo> list)
-        {
-            var indexer = 0;
-            foreach (var a in list)
-            {
-                if (a.SubType == TokenType.IndexerStart) { indexer++; yield return a; }
-                else if (a.SubType == TokenType.IndexerEnd) { indexer--; yield return a; }
-                else if (a.SubType == TokenType.Symbol) yield return a;
-                else if (a.SubType == TokenType.PropertyAccess) yield return a;
-                else if (indexer > 0) yield return a;
-                else yield break;
-            }
-        }
-
         public static IEnumerable<string> Completion(string text, out string prefix)
         {
             var syntax = FilterCompiler<T>.SyntaxHighlight(text).ToArray();
