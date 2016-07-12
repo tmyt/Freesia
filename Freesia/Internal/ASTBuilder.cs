@@ -192,8 +192,8 @@ namespace Freesia.Internal
             }
             // treat to err node
             var errAst = new List<ASTNode>();
-            while (values.Any(x => x.Token.Type == TokenType.IndexerStart)
-                   || values.Any(x => x.Token.Type == TokenType.ArrayStart))
+            while (values.Any(x => x?.Token.Type == TokenType.IndexerStart)
+                   || values.Any(x => x?.Token.Type == TokenType.ArrayStart))
             {
                 errAst.Add(values.Pop());
                 errAst.Last().Token.Type = TokenType.Error;
