@@ -88,7 +88,7 @@ namespace Freesia.Internal
                             }
                             else
                             {
-                                arrayNode = new ASTNode {Right = arrayNode, Token = node.Token};   
+                                arrayNode = new ASTNode { Right = arrayNode, Token = node.Token };
                             }
                         }
                         else if (arrayNode.Right == null) { arrayNode.Right = node; }
@@ -96,7 +96,7 @@ namespace Freesia.Internal
                         values.Pop();
                         node = values.Peek();
                     }
-                    arrayNode.Token = new CompilerToken { Type = TokenType.ArrayNode, Value = "{}", Length = 1, Position = node.Token.Position };
+                    arrayNode.Token = new CompilerToken { Type = TokenType.ArrayNode, Value = "{", Length = 1, Position = node.Token.Position };
                     if (arrayNode.Left == null)
                     {
                         arrayNode.Left = arrayNode.Right;
@@ -120,7 +120,7 @@ namespace Freesia.Internal
                         values.Pop();
                         node = values.Peek();
                     }
-                    indexerNode.Token = new CompilerToken { Type = TokenType.IndexerNode, Value = "[]", Length = 1, Position = node.Token.Position };
+                    indexerNode.Token = new CompilerToken { Type = TokenType.IndexerNode, Value = "[", Length = 1, Position = node.Token.Position };
                     values.Pop();
                     indexerNode.Left = values.Pop();
                     values.Push(indexerNode);
@@ -147,7 +147,7 @@ namespace Freesia.Internal
                         || p1.Type == TokenType.PropertyAccess
                         || p1.Type == TokenType.IndexerNode))
                     {
-                        token = new CompilerToken { Type = TokenType.InvokeMethod, Value = "()", Length = 1, Position = token.Position };
+                        token = new CompilerToken { Type = TokenType.InvokeMethod, Value = "(", Length = 1, Position = token.Position };
                     }
                     else
                     {

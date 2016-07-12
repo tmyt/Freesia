@@ -183,6 +183,7 @@ namespace Freesia.Internal
 
         private static Type GetDelegateType(Type elementType, Type determinedType)
         {
+            if (determinedType == null) return null;
             return typeof(Func<,>).MakeGenericType(elementType, determinedType);
         }
 
