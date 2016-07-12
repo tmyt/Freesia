@@ -6,7 +6,7 @@ using Freesia.Types;
 
 namespace Freesia.Internal.Types
 {
-    internal class ASTNode
+    internal class ASTNode : IASTNode
     {
         public CompilerToken Token { get; set; }
         public ASTNode Left { get; set; }

@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Freesia.Internal.Extensions;
 using Freesia.Internal.Reflection;
-using Freesia.Internal.Types;
 using Freesia.Types;
 
 namespace Freesia.Internal
@@ -27,8 +25,7 @@ namespace Freesia.Internal
 
         public static IEnumerable<string> Completion(string text, out string prefix)
         {
-            var c = new Tokenizer(text);
-            var syntax = FilterCompiler<T>.SyntaxHighlight(c.Parse(true)).ToArray();
+            var syntax = FilterCompiler<T>.SyntaxHighlight(text).ToArray();
             var last = syntax.LastOrDefault();
             prefix = "";
             // 末尾がnullならtypeof(T)のプロパティ
@@ -48,14 +45,7 @@ namespace Freesia.Internal
             }
             if (last.Type == SyntaxType.Error)
             {
-                if (syntax.Length == 1)
-                {
-                    type = typeof(T);
-                }
-                else
-                {
-                    type = syntax.Reverse().Skip(1).First().TypeInfo;
-                }
+                type = syntax.Length == 1 ? typeof(T) : syntax.Reverse().Skip(1).First().TypeInfo;
             }
             if (type == null) return Enumerable.Empty<string>();
             return type.GetRuntimeProperties()

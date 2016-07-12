@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Freesia.Internal;
+using Freesia.Internal.Types;
 using Freesia.Types;
 
 namespace Freesia
@@ -10,33 +11,30 @@ namespace Freesia
     {
         internal FilterCompiler() { }
 
-        public static IEnumerable<CompilerToken> Parse(string text)
+        public static IEnumerable<IASTNode> Parse(string text)
         {
-            return new Tokenizer(text).Parse(true);
+            return ASTBuilder.Generate(new Tokenizer(text).Parse(true));
         }
 
-        public static Func<T, bool> Compile(IEnumerable<CompilerToken> tokenList)
+        public static Func<T, bool> Compile(IEnumerable<IASTNode> ast)
         {
             var c = new ExpressionBuilder<T>();
-            var ast = ASTBuilder.Generate(tokenList);
-            return c.CompileSyntax(ast.FirstOrDefault());
+            return c.CompileSyntax((ASTNode)ast.FirstOrDefault());
         }
 
         public static Func<T, bool> Compile(string text)
         {
-            var tokenizer = new Tokenizer(text);
-            return Compile(tokenizer.Parse());
+            return Compile(Parse(text));
         }
 
-        public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<CompilerToken> tokenList)
+        public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<IASTNode> ast)
         {
-            return SyntaxHighlighter<T>.SyntaxHighlight(tokenList);
+            return SyntaxHighlighter<T>.SyntaxHighlight(ast);
         }
 
         public static IEnumerable<SyntaxInfo> SyntaxHighlight(string text)
         {
-            var c = new Tokenizer(text);
-            return SyntaxHighlight(c.Parse(true));
+            return SyntaxHighlight(Parse(text));
         }
 
         public static IEnumerable<string> Completion(string text, out string prefix)

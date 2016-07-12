@@ -214,9 +214,9 @@ namespace Freesia.Internal
             }
         }
 
-        public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<CompilerToken> tokenList)
+        public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<IASTNode> ast)
         {
-            var infos = SyntaxHighlightAST(ASTBuilder.Generate(tokenList)).OrderBy(x => x.Position).ToArray();
+            var infos = SyntaxHighlightAST((IEnumerable<ASTNode>)ast).OrderBy(x => x.Position).ToArray();
             return infos;
         }
     }

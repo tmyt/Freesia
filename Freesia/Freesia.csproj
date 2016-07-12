@@ -40,6 +40,7 @@
   <ItemGroup>
     <Compile Include="CompilerConfig.cs" />
     <Compile Include="FilterCompiler.cs" />
+    <Compile Include="Types\IASTNode.cs" />
     <Compile Include="Internal\ASTBuilder.cs" />
     <Compile Include="Internal\ExpressionBuilder.cs" />
     <Compile Include="Internal\Extensions\EnumerableEx.cs" />
