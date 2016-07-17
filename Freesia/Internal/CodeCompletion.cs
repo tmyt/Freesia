@@ -34,6 +34,7 @@ namespace Freesia.Internal
                 type = syntax.Length == 1 ? typeof(T) : syntax.Reverse().Skip(1).First().TypeInfo;
             }
             if (type == null) return Enumerable.Empty<string>();
+            prefix = lookup;
             return type.GetRuntimeProperties()
                 .Select(p => p.Name)
                 .Concat(type == typeof(T) && !string.IsNullOrEmpty(UserFunctionNamespace) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
