@@ -61,6 +61,8 @@ namespace Freesia.Internal
                     return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Keyword, Value = t.Value, TypeInfo = null };
                 case TokenType.Symbol:
                     return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Identifier, Value = t.Value, TypeInfo = null /* to be determin */ };
+                case TokenType.LambdaParameter:
+                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Keyword, Value = t.Value, TypeInfo = null /* to be determin */ };
                 case TokenType.Error:
                     return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Error, Value = t.Value ?? "", TypeInfo = null };
                 default:
@@ -100,6 +102,7 @@ namespace Freesia.Internal
                 if (lambdaArg != null && node.Token.Value == lambdaArg.Token.Value)
                 {
                     node.DeterminedType = lambdaArg.DeterminedType;
+                    node.Token.Type = TokenType.LambdaParameter;
                 }
                 if (node.DeterminedType == null)
                 {
@@ -149,6 +152,7 @@ namespace Freesia.Internal
                     if (arg.Token.Type != TokenType.Lambda) continue;
                     // update lambda related ast
                     arg.Left.DeterminedType = elementType;
+                    arg.Left.Token.Type = TokenType.LambdaParameter;
                     UpdateASTNodeType(arg.Right, null, arg.Left);
                     arg.DeterminedType = GetDelegateType(elementType, arg.Right.DeterminedType);
                 }

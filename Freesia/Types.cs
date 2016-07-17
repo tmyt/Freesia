@@ -99,6 +99,7 @@ namespace Freesia.Types
         IndexerEnd,
         IndexerNode,
         Lambda,
+        LambdaParameter,
         PropertyAccess,
         InvokeMethod,
         Symbol,
