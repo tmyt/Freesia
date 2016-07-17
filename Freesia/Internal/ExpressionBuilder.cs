@@ -22,6 +22,7 @@ namespace Freesia.Internal
 
         private object CompileOne(ASTNode ast)
         {
+            if (ast == null) return null;
             if (ast.Token.Type == TokenType.ArrayNode)
             {
                 var items = new List<object>();
