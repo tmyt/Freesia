@@ -24,7 +24,7 @@ namespace Freesia.Internal
             if (last.SubType == TokenType.String) return Enumerable.Empty<string>();
             // プロパティ/メソッドを検索
             var type = last.TypeInfo;
-            var lookup = last.Value;
+            var lookup = last.Value?.ToLowerInvariant();
             if (last.SubType == TokenType.PropertyAccess)
             {
                 lookup = "";

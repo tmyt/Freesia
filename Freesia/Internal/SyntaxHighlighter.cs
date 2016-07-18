@@ -106,7 +106,7 @@ namespace Freesia.Internal
                 }
                 if (node.DeterminedType == null)
                 {
-                    node.DeterminedType = IsExtendedMethod(parentNodeType, node.Token.Value)
+                    node.DeterminedType = IsExtendedMethod(parentNodeType, node.Token.Value.ToLowerInvariant())
                         ? typeof(ExtendedMethodPlaceholder) : null;
                 }
                 if (node.DeterminedType == null)
@@ -143,7 +143,7 @@ namespace Freesia.Internal
                 // if left side node type is not ExtendedMethodPlaceholder
                 if (node.Left?.DeterminedType != typeof(ExtendedMethodPlaceholder)) {/* error */return; }
                 var ie = node.Left.Left.DeterminedType; // target IE<T>
-                var methods = GetMethodInfo(node.Left.Right.Token.Value).ToArray();
+                var methods = GetMethodInfo(node.Left.Right.Token.Value.ToLowerInvariant()).ToArray();
                 var args = ExpandArguments(node.Right).ToArray();
                 if (methods.All(m => m.GetParameters().Length != args.Length + 1)) {/* error */return; }
                 var elementType = ie.GetUnderlyingElementType();
