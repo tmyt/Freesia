@@ -419,6 +419,7 @@ namespace Freesia.Internal
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
+                    case TokenType.LambdaParameter:
                         return MakeNullableAccessExpression(MakePropertyAccess(t));
                     case TokenType.String:
                         return Expression.Constant(t.Value);
@@ -452,7 +453,7 @@ namespace Freesia.Internal
 
         private Expression MakePropertyAccess(CompilerToken t)
         {
-            if (t.Type != TokenType.Symbol) throw new ArgumentException("argument token is not symbol.");
+            if (t.Type != TokenType.Symbol && t.Type != TokenType.LambdaParameter) throw new ArgumentException("argument token is not symbol.");
             if (_env.ContainsKey(t.Value)) return _env[t.Value];
             var targetExpression = (Expression)_rootParameter;
             var targetType = typeof(T);
@@ -468,6 +469,7 @@ namespace Freesia.Internal
 
         private Expression[] MakeArgumentList(Type elementType, ASTNode node)
         {
+            if (node == null) return new Expression[0];
             if (node.Token.Type == TokenType.Nop) return new Expression[0];
             var stack = new Stack<ASTNode>();
             stack.Push(node);
@@ -507,6 +509,7 @@ namespace Freesia.Internal
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
+                    case TokenType.LambdaParameter:
                         var type = GetSymbolType(t);
                         if (!type.GetTypeInfo().IsValueType) return true;
                         if (Nullable.GetUnderlyingType(type) != null) return true;
@@ -539,6 +542,7 @@ namespace Freesia.Internal
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
+                    case TokenType.LambdaParameter:
                         var type = GetSymbolType((CompilerToken)o);
                         if (!type.GetTypeInfo().IsValueType) return false;
                         if (Nullable.GetUnderlyingType(type) != null) return true;
@@ -578,6 +582,7 @@ namespace Freesia.Internal
                 {
                     case TokenType.Symbol:
                     case TokenType.String:
+                    case TokenType.LambdaParameter:
                         return false;
                     case TokenType.Double:
                     case TokenType.Long:
@@ -599,6 +604,7 @@ namespace Freesia.Internal
                 {
                     case TokenType.Symbol:
                     case TokenType.String:
+                    case TokenType.LambdaParameter:
                         return null;
                     case TokenType.Double:
                         return Double.Parse(t.Value);
@@ -624,6 +630,7 @@ namespace Freesia.Internal
                 switch (t.Type)
                 {
                     case TokenType.Symbol:
+                    case TokenType.LambdaParameter:
                         return GetSymbolType(t);
                     case TokenType.String:
                         return typeof(string);
@@ -644,7 +651,7 @@ namespace Freesia.Internal
 
         private Type GetSymbolType(CompilerToken t)
         {
-            if (t.Type != TokenType.Symbol) return null;
+            if (t.Type != TokenType.Symbol && t.Type != TokenType.LambdaParameter) return null;
             if (_env.ContainsKey(t.Value)) return _env[t.Value].Type;
             var propname = t.Value;
             if (propname == UserFunctionNamespace)
