@@ -72,18 +72,19 @@ namespace Freesia.Internal
 
         private static Type GetPropertyType(Type type, string name)
         {
-            return type.GetRuntimeProperties().Where(p => p.Name.ToLowerInvariant() == name.ToLowerInvariant()).Select(p => p.PropertyType).FirstOrDefault();
+            return type.GetRuntimeProperties().Where(p => string.Compare(p.Name, name, StringComparison.OrdinalIgnoreCase) == 0)
+                .Select(p => p.PropertyType).FirstOrDefault();
         }
 
         private static bool IsExtendedMethod(Type type, string name)
         {
             if (!type.IsEnumerable()) return false;
-            return Helper.GetEnumerableExtendedMethods().Any(m => name == m);
+            return Helper.GetEnumerableExtendedMethods().Any(m => string.Compare(name, m, StringComparison.OrdinalIgnoreCase) == 0);
         }
 
         private static IEnumerable<MethodInfo> GetMethodInfo(string name)
         {
-            return Helper.GetEnumerableExtendedMethodInfos().Where(m => m.Name.ToLowerInvariant() == name);
+            return Helper.GetEnumerableExtendedMethodInfos().Where(m => string.Compare(m.Name, name, StringComparison.OrdinalIgnoreCase) == 0);
         }
 
         private static void UpdateASTNodeType(ASTNode node, Type parentNodeType = null, ASTNode lambdaArg = null)
@@ -99,14 +100,14 @@ namespace Freesia.Internal
             if (node.Token.Type == TokenType.Symbol)
             {
                 node.DeterminedType = GetPropertyType(parentNodeType, node.Token.Value);
-                if (lambdaArg != null && node.Token.Value == lambdaArg.Token.Value)
+                if (lambdaArg != null && string.Compare(node.Token.Value, lambdaArg.Token.Value, StringComparison.OrdinalIgnoreCase) == 0)
                 {
                     node.DeterminedType = lambdaArg.DeterminedType;
                     node.Token.Type = TokenType.LambdaParameter;
                 }
                 if (node.DeterminedType == null)
                 {
-                    node.DeterminedType = IsExtendedMethod(parentNodeType, node.Token.Value.ToLowerInvariant())
+                    node.DeterminedType = IsExtendedMethod(parentNodeType, node.Token.Value)
                         ? typeof(ExtendedMethodPlaceholder) : null;
                 }
                 if (node.DeterminedType == null)
@@ -143,7 +144,7 @@ namespace Freesia.Internal
                 // if left side node type is not ExtendedMethodPlaceholder
                 if (node.Left?.DeterminedType != typeof(ExtendedMethodPlaceholder)) {/* error */return; }
                 var ie = node.Left.Left.DeterminedType; // target IE<T>
-                var methods = GetMethodInfo(node.Left.Right.Token.Value.ToLowerInvariant()).ToArray();
+                var methods = GetMethodInfo(node.Left.Right.Token.Value).ToArray();
                 var args = ExpandArguments(node.Right).ToArray();
                 if (methods.All(m => m.GetParameters().Length != args.Length + 1)) {/* error */return; }
                 var elementType = ie.GetUnderlyingElementType();
