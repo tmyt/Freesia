@@ -22,10 +22,7 @@ namespace Freesia.Internal.Extensions
 
         public static Type GetUnderlyingElementType(this Type type)
         {
-            if (type.IsConstructedGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
-                return type.GenericTypeArguments[0];
-            return type.GetTypeInfo().ImplementedInterfaces
-                .FirstOrDefault(t => t.GetTypeInfo().IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>))?.GenericTypeArguments[0];
+            return type.GetUnderlyingEnumerableType()?.GenericTypeArguments[0];
         }
 
         public static PropertyInfo GetPreferredPropertyType(this Type targetType, string propname)
