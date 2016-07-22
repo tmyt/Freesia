@@ -31,7 +31,9 @@ namespace Freesia.Internal
             }
             if (last.Type == SyntaxType.Error)
             {
-                type = syntax.Length == 1 ? typeof(T) : syntax.Reverse().Skip(1).First().TypeInfo;
+                var token = syntax.Reverse().Skip(1).FirstOrDefault();
+                type = token == null || token.Type == SyntaxType.Operator && token.SubType != TokenType.PropertyAccess ?
+                    typeof(T) : token.TypeInfo;
             }
             if (type == null) return Enumerable.Empty<string>();
             prefix = lookup;

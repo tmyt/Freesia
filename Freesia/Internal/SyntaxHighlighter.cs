@@ -121,7 +121,8 @@ namespace Freesia.Internal
             // process left node (and update ``node.Left.DeterminedType'' value)
             UpdateASTNodeType(node.Left, parentNodeType, lambdaArg);
             // process right node
-            UpdateASTNodeType(node.Right, node.Left?.DeterminedType, lambdaArg);
+            UpdateASTNodeType(node.Right, node.Left == null || node.Left.Token.IsOperator && node.Left.Token.Type != TokenType.PropertyAccess ?
+                null : node.Left?.DeterminedType, lambdaArg);
 
             // info is no Operator
             if (info.Type != SyntaxType.Operator)
