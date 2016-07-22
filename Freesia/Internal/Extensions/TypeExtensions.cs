@@ -7,6 +7,8 @@ namespace Freesia.Internal.Extensions
 {
     internal static class TypeExtensions
     {
+        private static Dictionary<Type, PropertyInfo[]> _cachedProperties = new Dictionary<Type, PropertyInfo[]>();
+
         public static bool IsEnumerable(this Type type)
         {
             return type.GetUnderlyingEnumerableType() != null;
@@ -25,9 +27,18 @@ namespace Freesia.Internal.Extensions
             return type.GetUnderlyingEnumerableType()?.GenericTypeArguments[0];
         }
 
+        public static IEnumerable<PropertyInfo> GetCachedRuntimeProperties(this Type type)
+        {
+            if (_cachedProperties.ContainsKey(type))
+                return _cachedProperties[type];
+            var props = type.GetRuntimeProperties().ToArray();
+            _cachedProperties[type] = props;
+            return props;
+        }
+
         public static PropertyInfo GetPreferredPropertyType(this Type targetType, string propname)
         {
-            return targetType?.GetRuntimeProperties().FirstOrDefault(p => string.Compare(p.Name, propname, StringComparison.OrdinalIgnoreCase) == 0);
+            return targetType?.GetCachedRuntimeProperties().FirstOrDefault(p => string.Compare(p.Name, propname, StringComparison.OrdinalIgnoreCase) == 0);
         }
     }
 }

@@ -35,7 +35,7 @@ namespace Freesia.Internal
             }
             if (type == null) return Enumerable.Empty<string>();
             prefix = lookup;
-            return type.GetRuntimeProperties()
+            return type.GetCachedRuntimeProperties()
                 .Select(p => p.Name)
                 .Concat(type == typeof(T) && !string.IsNullOrEmpty(UserFunctionNamespace) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
                 .Concat(type == typeof(UserFunctionTypePlaceholder) ? Functions.Keys : Enumerable.Empty<string>())

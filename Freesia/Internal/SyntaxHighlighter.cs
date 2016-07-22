@@ -72,7 +72,7 @@ namespace Freesia.Internal
 
         private static Type GetPropertyType(Type type, string name)
         {
-            return type.GetRuntimeProperties().Where(p => string.Compare(p.Name, name, StringComparison.OrdinalIgnoreCase) == 0)
+            return type.GetCachedRuntimeProperties().Where(p => string.Compare(p.Name, name, StringComparison.OrdinalIgnoreCase) == 0)
                 .Select(p => p.PropertyType).FirstOrDefault();
         }
 
