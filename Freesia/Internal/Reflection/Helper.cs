@@ -94,6 +94,11 @@ namespace Freesia.Internal.Reflection
 
         public static MethodInfo FindPreferredMethod(string methodName, Type[] argTypes)
         {
+            if (string.Compare("first", methodName, StringComparison.OrdinalIgnoreCase) == 0
+                || string.Compare("last", methodName, StringComparison.OrdinalIgnoreCase) == 0)
+            {
+                methodName += "ordefault";
+            }
             return EnumerableMethods.Value.Where(m => string.Compare(m.Name, methodName, StringComparison.OrdinalIgnoreCase) == 0)
                 .Where(m => m.GetParameters().Length == argTypes.Length)
                 .Where(m => m.IsGenericMethodDefinition || MatchArgTypes(m, argTypes))
@@ -105,12 +110,13 @@ namespace Freesia.Internal.Reflection
         {
             return EnumerableMethods.Value.Select(m => m.Name.ToLowerInvariant())
                 .Concat(EnumerableExtraMethods.Value.Select(m => m.Name.ToLowerInvariant()))
+                .Where(m => m != "firstordefault" && m != "lastordefault")
                 .Distinct();
         }
 
         public static IEnumerable<MethodInfo> GetEnumerableExtendedMethodInfos()
         {
             return EnumerableMethods.Value.Concat(EnumerableExtraMethods.Value);
-        } 
+        }
     }
 }
