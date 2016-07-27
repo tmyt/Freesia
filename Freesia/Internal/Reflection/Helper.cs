@@ -56,7 +56,7 @@ namespace Freesia.Internal.Reflection
 
         private static MethodInfo FindPreferredExtraMethod(string methodName, Type[] argTypes)
         {
-            return EnumerableExtraMethods.Value.Where(m => string.Compare(m.Name, methodName, StringComparison.OrdinalIgnoreCase) == 0)
+            return EnumerableExtraMethods.Value.Where(m => m.Name.CompareIgnoreCaseTo(methodName))
                 .Where(m => m.GetParameters().Length == argTypes.Length)
                 .Select(m => MakePreferredMethod(m, argTypes))
                 .FirstOrDefault(x => x != null);
@@ -94,12 +94,11 @@ namespace Freesia.Internal.Reflection
 
         public static MethodInfo FindPreferredMethod(string methodName, Type[] argTypes)
         {
-            if (string.Compare("first", methodName, StringComparison.OrdinalIgnoreCase) == 0
-                || string.Compare("last", methodName, StringComparison.OrdinalIgnoreCase) == 0)
+            if (methodName.CompareIgnoreCaseTo("first") || methodName.CompareIgnoreCaseTo("last"))
             {
                 methodName += "ordefault";
             }
-            return EnumerableMethods.Value.Where(m => string.Compare(m.Name, methodName, StringComparison.OrdinalIgnoreCase) == 0)
+            return EnumerableMethods.Value.Where(m => m.Name.CompareIgnoreCaseTo(methodName))
                 .Where(m => m.GetParameters().Length == argTypes.Length)
                 .Where(m => m.IsGenericMethodDefinition || MatchArgTypes(m, argTypes))
                 .Select(m => MakePreferredMethod(m, argTypes))

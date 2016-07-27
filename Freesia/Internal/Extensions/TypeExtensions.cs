@@ -38,7 +38,7 @@ namespace Freesia.Internal.Extensions
 
         public static PropertyInfo GetPreferredPropertyType(this Type targetType, string propname)
         {
-            return targetType?.GetCachedRuntimeProperties().FirstOrDefault(p => string.Compare(p.Name, propname, StringComparison.OrdinalIgnoreCase) == 0);
+            return targetType?.GetCachedRuntimeProperties().FirstOrDefault(p => p.Name.CompareIgnoreCaseTo(propname));
         }
     }
 }

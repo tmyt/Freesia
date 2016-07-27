@@ -72,19 +72,19 @@ namespace Freesia.Internal
 
         private static Type GetPropertyType(Type type, string name)
         {
-            return type.GetCachedRuntimeProperties().Where(p => string.Compare(p.Name, name, StringComparison.OrdinalIgnoreCase) == 0)
+            return type.GetCachedRuntimeProperties().Where(p => p.Name.CompareIgnoreCaseTo(name))
                 .Select(p => p.PropertyType).FirstOrDefault();
         }
 
         private static bool IsExtendedMethod(Type type, string name)
         {
             if (!type.IsEnumerable()) return false;
-            return Helper.GetEnumerableExtendedMethods().Any(m => string.Compare(name, m, StringComparison.OrdinalIgnoreCase) == 0);
+            return Helper.GetEnumerableExtendedMethods().Any(name.CompareIgnoreCaseTo);
         }
 
         private static IEnumerable<MethodInfo> GetMethodInfo(string name)
         {
-            return Helper.GetEnumerableExtendedMethodInfos().Where(m => string.Compare(m.Name, name, StringComparison.OrdinalIgnoreCase) == 0);
+            return Helper.GetEnumerableExtendedMethodInfos().Where(m => m.Name.CompareIgnoreCaseTo(name));
         }
 
         private static void UpdateASTNodeType(ASTNode node, Type parentNodeType = null, ASTNode lambdaArg = null)
@@ -100,7 +100,7 @@ namespace Freesia.Internal
             if (node.Token.Type == TokenType.Symbol)
             {
                 node.DeterminedType = GetPropertyType(parentNodeType, node.Token.Value);
-                if (lambdaArg != null && string.Compare(node.Token.Value, lambdaArg.Token.Value, StringComparison.OrdinalIgnoreCase) == 0)
+                if (lambdaArg != null && node.Token.Value.CompareIgnoreCaseTo(lambdaArg.Token.Value))
                 {
                     node.DeterminedType = lambdaArg.DeterminedType;
                     node.Token.Type = TokenType.LambdaParameter;
