@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using Freesia.Internal.Extensions;
 using Freesia.Internal.Reflection;
 using Freesia.Types;
@@ -15,7 +14,7 @@ namespace Freesia.Internal
             var last = syntax.LastOrDefault();
             prefix = "";
             // 末尾がnullならtypeof(T)のプロパティ
-            if (last == null) return typeof(T).GetRuntimeProperties()
+            if (last == null) return typeof(T).GetCachedRuntimeProperties()
                  .Select(p => p.Name)
                  .Concat(string.IsNullOrEmpty(UserFunctionNamespace) ? Enumerable.Empty<string>() : new[] { UserFunctionNamespace })
                  .Select(s => s.ToLowerInvariant())
