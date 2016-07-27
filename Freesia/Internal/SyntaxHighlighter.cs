@@ -91,7 +91,7 @@ namespace Freesia.Internal
         {
             if (node == null) return;
             if (node.Token.Type == TokenType.Nop) return;
-            parentNodeType = parentNodeType ?? typeof(T);
+            var updatedParentNodeType = parentNodeType ?? typeof(T);
 
             // determine operator node type
             var info = TranslateSyntaxInfo(node.Token);
@@ -99,7 +99,19 @@ namespace Freesia.Internal
             if (node.Token.Type == TokenType.Error) return;
             if (node.Token.Type == TokenType.Symbol)
             {
-                node.DeterminedType = GetPropertyType(parentNodeType, node.Token.Value);
+                node.DeterminedType = GetPropertyType(updatedParentNodeType, node.Token.Value);
+                if (updatedParentNodeType == typeof(UserFunctionTypePlaceholder))
+                {
+                    var func = Functions.Keys.FirstOrDefault(node.Token.Value.CompareIgnoreCaseTo);
+                    if (func != null)
+                    {
+                        node.DeterminedType = Functions[func].GetType().GenericTypeArguments.Last();
+                    }
+                }
+                if (parentNodeType == null && node.Token.Value.CompareIgnoreCaseTo(UserFunctionNamespace))
+                {
+                    node.DeterminedType = typeof(UserFunctionTypePlaceholder);
+                }
                 if (lambdaArg != null && node.Token.Value.CompareIgnoreCaseTo(lambdaArg.Token.Value))
                 {
                     node.DeterminedType = lambdaArg.DeterminedType;
@@ -107,7 +119,7 @@ namespace Freesia.Internal
                 }
                 if (node.DeterminedType == null)
                 {
-                    node.DeterminedType = IsExtendedMethod(parentNodeType, node.Token.Value)
+                    node.DeterminedType = IsExtendedMethod(updatedParentNodeType, node.Token.Value)
                         ? typeof(ExtendedMethodPlaceholder) : null;
                 }
                 if (node.DeterminedType == null)

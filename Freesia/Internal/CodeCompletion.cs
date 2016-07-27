@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Freesia.Internal.Extensions;
 using Freesia.Internal.Reflection;
@@ -22,7 +23,7 @@ namespace Freesia.Internal
             // 末尾がstring,(),indexerなら空
             if (last.SubType == TokenType.String) return Enumerable.Empty<string>();
             // プロパティ/メソッドを検索
-            var type = last.TypeInfo;
+            Type type = last.TypeInfo, baseType = type;
             var lookup = last.Value?.ToLowerInvariant();
             if (last.SubType == TokenType.PropertyAccess)
             {
@@ -34,17 +35,18 @@ namespace Freesia.Internal
                 lookup = "";
             }
             // Errorノードだった場合は直前のノードの型を検索対象とする
-            if (last.Type == SyntaxType.Error)
+            if (last.Type == SyntaxType.Error || last.Type == SyntaxType.Identifier)
             {
                 var token = syntax.Reverse().Skip(1).FirstOrDefault();
-                type = token == null || IsBooleanOperator(token) ?
-                    typeof(T) : token.TypeInfo;
+                baseType = token == null || IsBooleanOperator(token) ?
+                    null : token.TypeInfo;
+                type = baseType ?? typeof(T);
             }
             if (type == null) return Enumerable.Empty<string>();
             prefix = lookup;
             return type.GetCachedRuntimeProperties()
                 .Select(p => p.Name)
-                .Concat(type == typeof(T) && !string.IsNullOrEmpty(UserFunctionNamespace) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
+                .Concat(baseType == null && !string.IsNullOrEmpty(UserFunctionNamespace) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
                 .Concat(type == typeof(UserFunctionTypePlaceholder) ? Functions.Keys : Enumerable.Empty<string>())
                 .Concat(type.IsEnumerable() ? Helper.GetEnumerableExtendedMethods() : Enumerable.Empty<string>())
                 .Select(s => s.ToLowerInvariant())
