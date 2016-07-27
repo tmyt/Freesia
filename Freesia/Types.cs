@@ -43,6 +43,10 @@ namespace Freesia.Types
 
         public bool IsOperator => Operators.Priority.ContainsKey(this.Type);
 
+        public bool IsBooleanOperator => IsOperator
+                                         && this.Type != TokenType.PropertyAccess
+                                         && this.Type != TokenType.InvokeMethod;
+
         public bool IsSymbol => this.Type == TokenType.Symbol
                                 || this.Type == TokenType.String
                                 || this.Type == TokenType.Double

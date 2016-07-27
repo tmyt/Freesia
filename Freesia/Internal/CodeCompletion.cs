@@ -32,7 +32,7 @@ namespace Freesia.Internal
             if (last.Type == SyntaxType.Error)
             {
                 var token = syntax.Reverse().Skip(1).FirstOrDefault();
-                type = token == null || token.Type == SyntaxType.Operator && token.SubType != TokenType.PropertyAccess ?
+                type = token == null || IsBooleanOperator(token) ?
                     typeof(T) : token.TypeInfo;
             }
             if (type == null) return Enumerable.Empty<string>();
@@ -45,6 +45,13 @@ namespace Freesia.Internal
                 .Select(s => s.ToLowerInvariant())
                 .Where(n => n.StartsWith(lookup))
                 .OrderBy(s => s);
+        }
+
+        private static bool IsBooleanOperator(SyntaxInfo token)
+        {
+            return token.Type == SyntaxType.Operator
+                && token.SubType != TokenType.PropertyAccess
+                && token.SubType != TokenType.InvokeMethod;
         }
     }
 }
