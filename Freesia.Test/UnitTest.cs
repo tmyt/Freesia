@@ -38,16 +38,16 @@ namespace Freesia.Test
             return FilterCompiler<TestClass>.Compile(script)(new TestClass());
         }
 
-        private static void AreSequenceEeual<T,U>(Func<T,U> selector, IEnumerable<T> actual, params U[] expected)
+        private static void AreSequenceEeual<T, U>(Func<T, U> selector, IEnumerable<T> actual, params U[] expected)
         {
             var i = 0;
             foreach (var a in actual)
             {
-                if(i >= expected.Length) Assert.Fail("Element count is not match");
+                if (i >= expected.Length) Assert.Fail("Element count is not match");
                 var e = expected[i++];
                 Assert.AreEqual(e, selector(a));
             }
-            if(i != expected.Length) Assert.Fail("Element count is not match");
+            if (i != expected.Length) Assert.Fail("Element count is not match");
         }
 
         [ClassInitialize]
@@ -345,9 +345,9 @@ namespace Freesia.Test
             //FilterCompiler<TestClass>.SyntaxHighlight(syntax);
             //FilterCompiler<TestClass>.ParseForSyntaxHightlight(AllOpsScript);
             //FilterCompiler<TestClass>.ParseForSyntaxHightlight("true false user 1 2 3 'a' == !a || b[1] || {true, false, null} text user.func text.length").ToArray();
-            var infoc = FilterCompiler<TestClass>.SyntaxHighlight(
+            var info = FilterCompiler<TestClass>.SyntaxHighlight(
                 "text == {'a', 'b', 'c'}").ToArray();
-            AreSequenceEeual(a=>a.Type, infoc,
+            AreSequenceEeual(a => a.Type, info,
                 SyntaxType.Identifier,
                 SyntaxType.Operator,
                 SyntaxType.Operator,
@@ -356,9 +356,9 @@ namespace Freesia.Test
                 SyntaxType.Operator,
                 SyntaxType.String
                 );
-            var infob = FilterCompiler<TestClass>.SyntaxHighlight(
+            info = FilterCompiler<TestClass>.SyntaxHighlight(
                 "ints.contains(x => x.chars)").ToArray();
-            AreSequenceEeual(a=>a.Type, infob,
+            AreSequenceEeual(a => a.Type, info,
                 SyntaxType.Identifier,
                 SyntaxType.Operator,
                 SyntaxType.Identifier,
@@ -369,9 +369,9 @@ namespace Freesia.Test
                 SyntaxType.Operator,
                 SyntaxType.Identifier
                 );
-            var infoa = FilterCompiler<TestClass>.SyntaxHighlight(
+            info = FilterCompiler<TestClass>.SyntaxHighlight(
                 "ints[0].contains(x => x =@i 'aa')").ToArray();
-            AreSequenceEeual(a=>a.Type, infoa, 
+            AreSequenceEeual(a => a.Type, info,
                 SyntaxType.Identifier,
                 SyntaxType.Operator,
                 SyntaxType.Constant,
@@ -384,9 +384,9 @@ namespace Freesia.Test
                 SyntaxType.Operator,
                 SyntaxType.String
                 );
-            var infod = FilterCompiler<TestClass>.SyntaxHighlight(
-                "ints.contains(x => x.contains(y => y == 'C') || x == 'y')").ToArray();
-            AreSequenceEeual(a => a.Type, infod,
+            info = FilterCompiler<TestClass>.SyntaxHighlight(
+                "ints.contains(x => x.contains(y => y == x))").ToArray();
+            AreSequenceEeual(a => a.Type, info,
                 SyntaxType.Identifier,
                 SyntaxType.Operator,
                 SyntaxType.Identifier,
@@ -401,13 +401,9 @@ namespace Freesia.Test
                 SyntaxType.Operator,
                 SyntaxType.Keyword,
                 SyntaxType.Operator,
-                SyntaxType.String,
-                SyntaxType.Operator,
-                SyntaxType.Keyword,
-                SyntaxType.Operator,
-                SyntaxType.String
+                SyntaxType.Keyword
                 );
-            var info = FilterCompiler<TestClass>.SyntaxHighlight(
+            info = FilterCompiler<TestClass>.SyntaxHighlight(
                 "user.func == false && ints.contains(x => x =@i 'aa') && favorited != true || testclass2.s == 'bbb' && id >= 10").ToArray();
             AreSequenceEeual(a => a.Type, info,
                 SyntaxType.Identifier,  // user
@@ -444,7 +440,7 @@ namespace Freesia.Test
         [TestMethod]
         public void UnaryOperator()
         {
-            Assert.IsFalse(RunTest("!{true}", new TestClass()));
+            Assert.IsFalse(RunTest("!true", new TestClass()));
             Assert.IsFalse(RunTest("!{true, true}", new TestClass()));
             Assert.IsFalse(RunTest("!{B}", new TestClass { B = true }));
         }

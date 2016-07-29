@@ -87,7 +87,7 @@ namespace Freesia.Internal
             return Helper.GetEnumerableExtendedMethodInfos().Where(m => m.Name.CompareIgnoreCaseTo(name));
         }
 
-        private static void UpdateASTNodeType(ASTNode node, Type parentNodeType = null, ASTNode lambdaArg = null)
+        private static void UpdateASTNodeType(ASTNode node, Type parentNodeType = null, EnvironmentMap lambdaEnv = null)
         {
             if (node == null) return;
             if (node.Token.Type == TokenType.Nop) return;
@@ -97,7 +97,7 @@ namespace Freesia.Internal
             var info = TranslateSyntaxInfo(node.Token);
             // determine identifier type
             if (node.Token.Type == TokenType.Error) return;
-            if (node.Token.Type == TokenType.Symbol)
+            if (node.Token.Type == TokenType.Symbol || node.Token.Type == TokenType.LambdaParameter)
             {
                 node.DeterminedType = GetPropertyType(updatedParentNodeType, node.Token.Value);
                 if (updatedParentNodeType == typeof(UserFunctionTypePlaceholder))
@@ -112,9 +112,9 @@ namespace Freesia.Internal
                 {
                     node.DeterminedType = typeof(UserFunctionTypePlaceholder);
                 }
-                if (lambdaArg != null && node.Token.Value.CompareIgnoreCaseTo(lambdaArg.Token.Value))
+                if (lambdaEnv != null && lambdaEnv.ContainsKey(node.Token.Value))
                 {
-                    node.DeterminedType = lambdaArg.DeterminedType;
+                    node.DeterminedType = lambdaEnv[node.Token.Value];
                     node.Token.Type = TokenType.LambdaParameter;
                 }
                 if (node.DeterminedType == null)
@@ -131,10 +131,10 @@ namespace Freesia.Internal
             }
 
             // process left node (and update ``node.Left.DeterminedType'' value)
-            UpdateASTNodeType(node.Left, parentNodeType, lambdaArg);
+            UpdateASTNodeType(node.Left, parentNodeType, lambdaEnv);
             // process right node
             UpdateASTNodeType(node.Right, node.Left == null || node.Left.Token.IsBooleanOperator ?
-                null : node.Left?.DeterminedType, lambdaArg);
+                null : node.Left?.DeterminedType, lambdaEnv);
 
             // info is no Operator
             if (info.Type != SyntaxType.Operator)
@@ -167,7 +167,9 @@ namespace Freesia.Internal
                     // update lambda related ast
                     arg.Left.DeterminedType = elementType;
                     arg.Left.Token.Type = TokenType.LambdaParameter;
-                    UpdateASTNodeType(arg.Right, null, arg.Left);
+                    var env = lambdaEnv == null ? new EnvironmentMap() : new EnvironmentMap(lambdaEnv);
+                    env[arg.Left.Token.Value] = arg.Left.DeterminedType;
+                    UpdateASTNodeType(arg.Right, null, env);
                     arg.DeterminedType = GetDelegateType(elementType, arg.Right.DeterminedType);
                 }
                 // fill generic parameter

@@ -25,7 +25,7 @@ namespace Freesia.Types
 
         public override string ToString()
         {
-            return $"{Type}: {Value}";
+            return $"{Type}({SubType}): {Value}";
         }
     }
 
