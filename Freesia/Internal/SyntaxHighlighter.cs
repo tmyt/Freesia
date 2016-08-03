@@ -236,6 +236,7 @@ namespace Freesia.Internal
 
         public static IEnumerable<SyntaxInfo> SyntaxHighlight(IEnumerable<IASTNode> ast)
         {
+            if (ast == null) return Enumerable.Empty<SyntaxInfo>();
             var infos = SyntaxHighlightAST(ast.Cast<ASTNode>()).OrderBy(x => x.Position).ToArray();
             return infos;
         }
