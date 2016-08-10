@@ -57,7 +57,7 @@ namespace Freesia.Internal
             var lhs = CompileOne(ast.Left);
             var rhs = CompileOne(ast.Right);
             // 型キャスト
-            if (IsConstant(lhs) || IsConstant(rhs))
+            if (ast.Token.Type != TokenType.PropertyAccess && (IsConstant(lhs) || IsConstant(rhs)))
             {
                 bool iscl = IsConstant(lhs), iscr = IsConstant(rhs);
                 if (iscl && !iscr)
@@ -355,6 +355,7 @@ namespace Freesia.Internal
 
         private Expression MakeMemberAccessExpression(object lhs, CompilerToken rhs)
         {
+            lhs = lhs is object[] ? Expression.Constant(lhs) : lhs;
             var expr = lhs as Expression ?? MakePropertyAccess((CompilerToken)lhs);
             var valueExpr = MakeNullableAccessExpression(expr);
             if (IsNullable(lhs) && rhs.Value.ToLowerInvariant() == "hasvalue") valueExpr = expr;

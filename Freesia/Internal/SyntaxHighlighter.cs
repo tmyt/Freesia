@@ -129,6 +129,11 @@ namespace Freesia.Internal
                 }
                 return;
             }
+            if (node.Token.Type == TokenType.ArrayNode)
+            {
+                node.DeterminedType = typeof(object[]);
+                return;
+            }
 
             // process left node (and update ``node.Left.DeterminedType'' value)
             UpdateASTNodeType(node.Left, parentNodeType, lambdaEnv);
