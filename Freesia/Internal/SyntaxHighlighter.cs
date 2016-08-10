@@ -46,23 +46,23 @@ namespace Freesia.Internal
                 case TokenType.IndexerNode:
                 case TokenType.PropertyAccess:
                 case TokenType.InvokeMethod:
-                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Operator, Value = t.Value, TypeInfo = null };
+                    return new SyntaxInfo(t, SyntaxType.Operator) { TypeInfo = null };
                 case TokenType.String:
-                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.String, Value = t.Value, TypeInfo = typeof(string) };
+                    return new SyntaxInfo(t, SyntaxType.String) { TypeInfo = typeof(string) };
                 case TokenType.Double:
-                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Constant, Value = t.Value, TypeInfo = typeof(double) };
+                    return new SyntaxInfo(t, SyntaxType.Constant) { TypeInfo = typeof(double) };
                 case TokenType.Long:
-                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Constant, Value = t.Value, TypeInfo = typeof(long) };
+                    return new SyntaxInfo(t, SyntaxType.Constant) { TypeInfo = typeof(long) };
                 case TokenType.ULong:
-                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Constant, Value = t.Value, TypeInfo = typeof(ulong) };
+                    return new SyntaxInfo(t, SyntaxType.Constant) { TypeInfo = typeof(ulong) };
                 case TokenType.Bool:
-                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Keyword, Value = t.Value, TypeInfo = typeof(bool) };
+                    return new SyntaxInfo(t, SyntaxType.Keyword) { TypeInfo = typeof(bool) };
                 case TokenType.Null:
-                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Keyword, Value = t.Value, TypeInfo = null };
+                    return new SyntaxInfo(t, SyntaxType.Keyword) { TypeInfo = null };
                 case TokenType.Symbol:
-                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Identifier, Value = t.Value, TypeInfo = null /* to be determin */ };
+                    return new SyntaxInfo(t, SyntaxType.Identifier) { TypeInfo = null /* to be determin */ };
                 case TokenType.LambdaParameter:
-                    return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Keyword, Value = t.Value, TypeInfo = null /* to be determin */ };
+                    return new SyntaxInfo(t, SyntaxType.Keyword) { TypeInfo = null /* to be determin */ };
                 case TokenType.Error:
                     return new SyntaxInfo { Length = t.Length, Position = t.Position, SubType = t.Type, Type = SyntaxType.Error, Value = t.Value ?? "", TypeInfo = null };
                 default:
