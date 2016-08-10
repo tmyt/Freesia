@@ -61,7 +61,7 @@ namespace Freesia.Internal
                 if (token.Type == TokenType.ArrayEnd) inArray = false;
                 // check ArrayDelimiter
                 if (inArray && p1 != null &&
-                    (p1.Type != TokenType.ArrayStart && p1.Type != TokenType.ArrayDelimiter))
+                    (p1.IsConstant || p1.IsSymbol) && (p2.IsConstant||p2.IsSymbol))
                     throw new ParseException("Array elements must be delimitered ','.", -1);
                 // enter Array parsing
                 if (token.Type == TokenType.ArrayStart) inArray = true;
@@ -77,54 +77,14 @@ namespace Freesia.Internal
                 // generate AST for Array
                 if (token.Type == TokenType.ArrayEnd)
                 {
-                    var node = values.Peek();
-                    var arrayNode = new ASTNode();
-                    while (node.Token.Type != TokenType.ArrayStart)
-                    {
-                        if (node.Token.Type == TokenType.ArrayDelimiter)
-                        {
-                            if (arrayNode.Token == null)
-                            {
-                                arrayNode.Token = node.Token;
-                            }
-                            else
-                            {
-                                arrayNode = new ASTNode { Right = arrayNode, Token = node.Token };
-                            }
-                        }
-                        else if (arrayNode.Right == null) { arrayNode.Right = node; }
-                        else if (arrayNode.Left == null) { arrayNode.Left = node; }
-                        values.Pop();
-                        node = values.Peek();
-                    }
-                    arrayNode.Token = new CompilerToken { Type = TokenType.ArrayNode, Value = "{", Length = 1, Position = node.Token.Position };
-                    if (arrayNode.Left == null)
-                    {
-                        arrayNode.Left = arrayNode.Right;
-                        arrayNode.Right = null;
-                    }
-                    values.Pop();
+                    var arrayNode = GenerateArrayNode(ref values, ref ops);
                     values.Push(arrayNode);
                     continue;
                 }
                 // generate AST for Indexer
                 if (token.Type == TokenType.IndexerEnd)
                 {
-                    var node = values.Peek();
-                    var indexerNode = new ASTNode();
-                    var valueTaken = false;
-                    while (node.Token.Type != TokenType.IndexerStart)
-                    {
-                        if (valueTaken) throw new ParseException("Indexer should be one token.", node.Token.Position);
-                        valueTaken = true;
-                        indexerNode.Right = node;
-                        values.Pop();
-                        node = values.Peek();
-                    }
-                    if (!valueTaken) throw new ParseException("Indexer should be one token.", node.Token.Position);
-                    indexerNode.Token = new CompilerToken { Type = TokenType.IndexerNode, Value = "[", Length = 1, Position = node.Token.Position };
-                    values.Pop();
-                    indexerNode.Left = values.Pop();
+                    var indexerNode = GenerateIndexerNode(ref values);
                     values.Push(indexerNode);
                     continue;
                 }
@@ -191,12 +151,19 @@ namespace Freesia.Internal
                 values.Push(null);
             }
             // treat to err node
-            var errAst = new List<ASTNode>();
-            while (values.Any(x => x?.Token.Type == TokenType.IndexerStart)
-                   || values.Any(x => x?.Token.Type == TokenType.ArrayStart))
+            while (values.Any(x => x?.Token.Type == TokenType.IndexerStart
+                   || x?.Token.Type == TokenType.ArrayStart))
             {
-                errAst.Add(values.Pop());
-                errAst.Last().Token.Type = TokenType.Error;
+                var orphanNode = values.LastOrDefault(x => x?.Token.Type == TokenType.IndexerStart
+                   || x?.Token.Type == TokenType.ArrayStart);
+                if (orphanNode.Token.Type == TokenType.IndexerStart)
+                {
+                    values.Push(GenerateIndexerNode(ref values));
+                }
+                else if (orphanNode.Token.Type == TokenType.ArrayStart)
+                {
+                    values.Push(GenerateArrayNode(ref values, ref ops));
+                }
             }
             // take all ops
             while (ops.Count != 0)
@@ -206,9 +173,86 @@ namespace Freesia.Internal
                 values.Push(MakeAst(ops.Pop(), ref values));
             }
             trees.Add(values.Pop());
-            trees.AddRange(errAst);
             // this is AST
             return trees;
+        }
+
+        private static ASTNode GenerateArrayNode(ref Stack<ASTNode> values, ref Stack<CompilerToken> ops)
+        {
+            var node = values.Peek();
+            var arrayNode = new ASTNode();
+            var trailingDelimiters = true;
+            if (ops.Count > 0 && (node == null || node.Token.Position > ops.Peek().Position))
+            {
+                values.Pop();
+                var tmp = values.Peek();
+                values.Push(node);
+                if (tmp.Token.Position <= ops.Peek().Position)
+                {
+                    values.Push(MakeAst(ops.Pop(), ref values));
+                    node = values.Peek();
+                }
+            }
+            while (node.Token.Type != TokenType.ArrayStart)
+            {
+                if (node.Token.Type == TokenType.ArrayDelimiter)
+                {
+                    if (trailingDelimiters)
+                    {
+                        values.Pop();
+                        node = values.Peek();
+                        continue;
+                    }
+                    if (arrayNode.Token == null)
+                    {
+                        arrayNode.Token = node.Token;
+                    }
+                    else
+                    {
+                        arrayNode = new ASTNode {Right = arrayNode, Token = node.Token};
+                    }
+                }
+                else if (arrayNode.Right == null)
+                {
+                    trailingDelimiters = false;
+                    arrayNode.Right = node;
+                }
+                else if (arrayNode.Left == null)
+                {
+                    trailingDelimiters = false;
+                    arrayNode.Left = node;
+                }
+                values.Pop();
+                node = values.Peek();
+            }
+            arrayNode.Token = new CompilerToken { Type = TokenType.ArrayNode, Value = "{", Length = 1, Position = node.Token.Position };
+            if (arrayNode.Left == null)
+            {
+                arrayNode.Left = arrayNode.Right;
+                arrayNode.Right = null;
+            }
+            values.Pop();
+            return arrayNode;
+        }
+
+        private static ASTNode GenerateIndexerNode(ref Stack<ASTNode> values)
+        {
+            var node = values.Peek();
+            var indexerNode = new ASTNode();
+            var valueTaken = false;
+            while (node.Token.Type != TokenType.IndexerStart)
+            {
+                if (valueTaken) throw new ParseException("Indexer should be one token.", node.Token.Position);
+                valueTaken = true;
+                indexerNode.Right = node;
+                values.Pop();
+                node = values.Peek();
+            }
+            if (!valueTaken) throw new ParseException("Indexer should be one token.", node.Token.Position);
+            indexerNode.Token = new CompilerToken { Type = TokenType.IndexerNode, Value = "[", Length = 1, Position = node.Token.Position };
+            values.Pop();
+            indexerNode.Left = values.Pop();
+            return indexerNode;
         }
 
         public static IEnumerable<ASTNode> Generate(IEnumerable<CompilerToken> list)

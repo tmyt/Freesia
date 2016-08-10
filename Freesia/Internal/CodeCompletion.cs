@@ -38,7 +38,7 @@ namespace Freesia.Internal
             if (last.Type == SyntaxType.Error || last.Type == SyntaxType.Identifier)
             {
                 var token = syntax.Reverse().Skip(1).FirstOrDefault();
-                baseType = token == null || IsBooleanOperator(token) ?
+                baseType = token == null || IsSymbol(token) || IsBooleanOperator(token) ?
                     null : token.TypeInfo;
                 type = baseType ?? typeof(T);
             }
@@ -52,6 +52,17 @@ namespace Freesia.Internal
                 .Select(s => s.ToLowerInvariant())
                 .Where(n => n.StartsWith(lookup))
                 .OrderBy(s => s);
+        }
+
+        private static bool IsSymbol(SyntaxInfo token)
+        {
+            return token.SubType == TokenType.Symbol
+                   || token.SubType == TokenType.String
+                   || token.SubType == TokenType.Double
+                   || token.SubType == TokenType.Long
+                   || token.SubType == TokenType.ULong
+                   || token.SubType == TokenType.Bool
+                   || token.SubType == TokenType.Null;
         }
 
         private static bool IsBooleanOperator(SyntaxInfo token)

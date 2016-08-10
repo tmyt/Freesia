@@ -36,7 +36,7 @@ namespace Freesia.Internal
                         current = current.Right;
                         continue;
                     }
-                    items.Add(current.Token);
+                    items.Add(CompileOne(current));
                     break;
                 }
                 return items.ToArray();
