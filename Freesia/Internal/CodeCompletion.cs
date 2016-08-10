@@ -11,7 +11,7 @@ namespace Freesia.Internal
     {
         public static IEnumerable<string> Completion(string text, out string prefix)
         {
-            var syntax = FilterCompiler<T>.SyntaxHighlight(text).ToArray();
+            var syntax = FilterCompiler.SyntaxHighlight<T>(text).ToArray();
             var last = syntax.LastOrDefault();
             prefix = "";
             // 末尾がnullならtypeof(T)のプロパティ

@@ -30,12 +30,12 @@ namespace Freesia.Test
 
         private static bool RunTest(string script, TestClass obj)
         {
-            return FilterCompiler<TestClass>.Compile(script)(obj);
+            return FilterCompiler.Compile<TestClass>(script)(obj);
         }
 
         private static bool RunTest(string script)
         {
-            return FilterCompiler<TestClass>.Compile(script)(new TestClass());
+            return FilterCompiler.Compile<TestClass>(script)(new TestClass());
         }
 
         private static void AreSequenceEeual<T, U>(Func<T, U> selector, IEnumerable<T> actual, params U[] expected)
@@ -341,11 +341,14 @@ namespace Freesia.Test
         [TestMethod]
         public void SyntaxHighlight()
         {
-            //var syntax = FilterCompiler<TestClass>.Parse(AllOpsScript);
-            //FilterCompiler<TestClass>.SyntaxHighlight(syntax);
-            //FilterCompiler<TestClass>.ParseForSyntaxHightlight(AllOpsScript);
-            //FilterCompiler<TestClass>.ParseForSyntaxHightlight("true false user 1 2 3 'a' == !a || b[1] || {true, false, null} text user.func text.length").ToArray();
-            var info = FilterCompiler<TestClass>.SyntaxHighlight(
+            //var syntax = FilterCompiler.Parse<TestClass>(AllOpsScript);
+            //FilterCompiler.SyntaxHighlight<TestClass>(syntax);
+            //FilterCompiler.ParseForSyntaxHightlight<TestClass>(AllOpsScript);
+            //FilterCompiler.ParseForSyntaxHightlight<TestClass>("true false user 1 2 3 'a' == !a || b[1] || {true, false, null} text user.func text.length").ToArray();
+            FilterCompiler.SyntaxHighlight<TestClass>("null");
+            FilterCompiler.SyntaxHighlight<TestClass>("true");
+            FilterCompiler.SyntaxHighlight<TestClass>("0.5");
+            var info = FilterCompiler.SyntaxHighlight<TestClass>(
                 "text == {'a', 'b', 'c'}").ToArray();
             AreSequenceEeual(a => a.Type, info,
                 SyntaxType.Identifier,
@@ -356,7 +359,7 @@ namespace Freesia.Test
                 SyntaxType.Operator,
                 SyntaxType.String
                 );
-            info = FilterCompiler<TestClass>.SyntaxHighlight(
+            info = FilterCompiler.SyntaxHighlight<TestClass>(
                 "ints.contains(x => x.chars)").ToArray();
             AreSequenceEeual(a => a.Type, info,
                 SyntaxType.Identifier,
@@ -369,7 +372,7 @@ namespace Freesia.Test
                 SyntaxType.Operator,
                 SyntaxType.Identifier
                 );
-            info = FilterCompiler<TestClass>.SyntaxHighlight(
+            info = FilterCompiler.SyntaxHighlight<TestClass>(
                 "ints[0].contains(x => x =@i 'aa')").ToArray();
             AreSequenceEeual(a => a.Type, info,
                 SyntaxType.Identifier,
@@ -384,7 +387,7 @@ namespace Freesia.Test
                 SyntaxType.Operator,
                 SyntaxType.String
                 );
-            info = FilterCompiler<TestClass>.SyntaxHighlight(
+            info = FilterCompiler.SyntaxHighlight<TestClass>(
                 "ints.contains(x => x.contains(y => y == x))").ToArray();
             AreSequenceEeual(a => a.Type, info,
                 SyntaxType.Identifier,
@@ -403,7 +406,7 @@ namespace Freesia.Test
                 SyntaxType.Operator,
                 SyntaxType.Keyword
                 );
-            info = FilterCompiler<TestClass>.SyntaxHighlight(
+            info = FilterCompiler.SyntaxHighlight<TestClass>(
                 "user.func == false && ints.contains(x => x =@i 'aa') && favorited != true || testclass2.s == 'bbb' && id >= 10").ToArray();
             AreSequenceEeual(a => a.Type, info,
                 SyntaxType.Identifier,  // user
@@ -449,34 +452,34 @@ namespace Freesia.Test
         public void CompletionTest()
         {
             string s;
-            FilterCompiler<TestClass>.Completion("'", out s);
-            FilterCompiler<TestClass>.Completion("\"", out s);
-            FilterCompiler<TestClass>.Completion("'a", out s);
-            FilterCompiler<TestClass>.Completion("a", out s);
-            FilterCompiler<TestClass>.Completion("text.l", out s);
-            FilterCompiler<TestClass>.Completion("user.", out s);
-            FilterCompiler<TestClass>.Completion("user.f", out s);
-            var completion = FilterCompiler<TestClass>.Completion("ints.contains(x => x == 'a", out s);
+            FilterCompiler.Completion<TestClass>("'", out s);
+            FilterCompiler.Completion<TestClass>("\"", out s);
+            FilterCompiler.Completion<TestClass>("'a", out s);
+            FilterCompiler.Completion<TestClass>("a", out s);
+            FilterCompiler.Completion<TestClass>("text.l", out s);
+            FilterCompiler.Completion<TestClass>("user.", out s);
+            FilterCompiler.Completion<TestClass>("user.f", out s);
+            var completion = FilterCompiler.Completion<TestClass>("ints.contains(x => x == 'a", out s);
             Assert.IsTrue(!completion.Any());
             Assert.AreEqual("", s);
-            completion = FilterCompiler<TestClass>.Completion("ints.contains(x => x.c", out s);
+            completion = FilterCompiler.Completion<TestClass>("ints.contains(x => x.c", out s);
             Assert.AreEqual("cast", completion.First());
             Assert.AreEqual("c", s);
-            completion = FilterCompiler<TestClass>.Completion("text == 'a' || tex", out s);
+            completion = FilterCompiler.Completion<TestClass>("text == 'a' || tex", out s);
             Assert.AreEqual("text", completion.First());
             Assert.AreEqual("tex", s);
-            completion = FilterCompiler<TestClass>.Completion("text == 'a' || ints.le", out s);
+            completion = FilterCompiler.Completion<TestClass>("text == 'a' || ints.le", out s);
             Assert.AreEqual("length", completion.First());
             Assert.AreEqual("le", s);
-            completion = FilterCompiler<TestClass>.Completion("testclass2.", out s);
+            completion = FilterCompiler.Completion<TestClass>("testclass2.", out s);
             Assert.AreEqual("s", completion.First());
             Assert.AreEqual("", s);
-            completion = FilterCompiler<TestClass>.Completion("ints[0].c", out s);
+            completion = FilterCompiler.Completion<TestClass>("ints[0].c", out s);
             Assert.AreEqual("cast", completion.First());
             Assert.AreEqual("c", s);
-            Assert.AreEqual(FilterCompiler<TestClass>.Completion("", out s).Count(),
+            Assert.AreEqual(FilterCompiler.Completion<TestClass>("", out s).Count(),
                 typeof(TestClass).GetProperties().Length + 1);
-            completion = FilterCompiler<TestClass>.Completion("ints.first().", out s);
+            completion = FilterCompiler.Completion<TestClass>("ints.first().", out s);
             Assert.IsTrue(completion.Any());
             Assert.AreEqual("", s);
         }
@@ -537,10 +540,10 @@ namespace Freesia.Test
         [TestMethod]
         public void LambdaTest()
         {
-            FilterCompiler<TestClass>.Parse("a => a != null");
+            FilterCompiler.Parse("a => a != null");
             try
             {
-                FilterCompiler<TestClass>.Compile("a => a != null");
+                FilterCompiler.Compile<TestClass>("a => a != null");
             }
             catch (ParseException)
             {
@@ -555,8 +558,8 @@ namespace Freesia.Test
             var a = new TestClass { Ints = new[] { "https://www.example.com/" } };
             Assert.IsTrue(RunTest("ints.contains(x => x =@i 'example')", a));
             Assert.IsTrue(RunTest("ints.any()", a));
-            //FilterCompiler<TestClass>.Compile("entities.urls.contains(x => x =@i 'example')");
-            //FilterCompiler<TestClass>.Compile("method(a => a == 1)");
+            //FilterCompiler.Compile<TestClass>("entities.urls.contains(x => x =@i 'example')");
+            //FilterCompiler.Compile<TestClass>("method(a => a == 1)");
         }
 
         [TestMethod]
