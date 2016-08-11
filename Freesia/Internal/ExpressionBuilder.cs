@@ -77,11 +77,17 @@ namespace Freesia.Internal
                 case TokenType.Minus:
                     return MakeBinaryExpression(Expression.Subtract, lhs, rhs, true);
                 case TokenType.Multiply:
-                    return MakeBinaryExpression(Expression.Multiply, lhs, 
-                        GetValueType(lhs) == typeof(double) ? Expression.Convert(MakeExpression(rhs), typeof(double)) : rhs, true);
+                    return MakeBinaryExpression(Expression.Multiply,
+                        GetValueType(lhs) == typeof(double) || GetValueType(rhs) == typeof(double)
+                            ? Expression.Convert(MakeExpression(lhs), typeof(double)) : lhs,
+                        GetValueType(lhs) == typeof(double) || GetValueType(rhs) == typeof(double)
+                            ? Expression.Convert(MakeExpression(rhs), typeof(double)) : rhs, true);
                 case TokenType.Divide:
-                    return MakeBinaryExpression(Expression.Divide, lhs,
-                        GetValueType(lhs) == typeof(double) ? Expression.Convert(MakeExpression(rhs), typeof(double)) : rhs, true);
+                    return MakeBinaryExpression(Expression.Divide,
+                        GetValueType(lhs) == typeof(double) || GetValueType(rhs) == typeof(double)
+                            ? Expression.Convert(MakeExpression(lhs), typeof(double)) : lhs,
+                        GetValueType(lhs) == typeof(double) || GetValueType(rhs) == typeof(double)
+                            ? Expression.Convert(MakeExpression(rhs), typeof(double)) : rhs, true);
                 case TokenType.Modulo:
                     return MakeBinaryExpression(Expression.Modulo, lhs, rhs, true);
                 case TokenType.ShiftLeft:
