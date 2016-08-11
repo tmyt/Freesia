@@ -236,7 +236,7 @@ namespace Freesia.Internal
             {
                 arrayNode.Token = arrayToken;
                 arrayNode.Left = arrayNode.Right;
-                arrayNode.Right = NopNode(arrayNode.Left.Token);
+                arrayNode.Right = arrayNode.Left == null ? null : NopNode(arrayNode.Left.Token);
             }
             else
             {
