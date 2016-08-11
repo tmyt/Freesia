@@ -73,19 +73,21 @@ namespace Freesia.Internal
             switch (ast.Token.Type)
             {
                 case TokenType.Plus:
-                    return MakeBinaryExpression(Expression.Add, lhs, rhs);
+                    return MakeBinaryExpression(Expression.Add, lhs, rhs, true);
                 case TokenType.Minus:
-                    return MakeBinaryExpression(Expression.Subtract, lhs, rhs);
+                    return MakeBinaryExpression(Expression.Subtract, lhs, rhs, true);
                 case TokenType.Multiply:
-                    return MakeBinaryExpression(Expression.Multiply, lhs, rhs);
+                    return MakeBinaryExpression(Expression.Multiply, lhs, 
+                        GetValueType(lhs) == typeof(double) ? Expression.Convert(MakeExpression(rhs), typeof(double)) : rhs, true);
                 case TokenType.Divide:
-                    return MakeBinaryExpression(Expression.Divide, lhs, rhs);
+                    return MakeBinaryExpression(Expression.Divide, lhs,
+                        GetValueType(lhs) == typeof(double) ? Expression.Convert(MakeExpression(rhs), typeof(double)) : rhs, true);
                 case TokenType.Modulo:
-                    return MakeBinaryExpression(Expression.Modulo, lhs, rhs);
+                    return MakeBinaryExpression(Expression.Modulo, lhs, rhs, true);
                 case TokenType.ShiftLeft:
-                    return MakeBinaryExpression(Expression.LeftShift, lhs, Expression.Convert(MakeExpression(rhs), typeof(int)));
+                    return MakeBinaryExpression(Expression.LeftShift, lhs, Expression.Convert(MakeExpression(rhs), typeof(int)), true);
                 case TokenType.ShiftRight:
-                    return MakeBinaryExpression(Expression.RightShift, lhs, Expression.Convert(MakeExpression(rhs), typeof(int)));
+                    return MakeBinaryExpression(Expression.RightShift, lhs, Expression.Convert(MakeExpression(rhs), typeof(int)), true);
                 case TokenType.Equals:
                     return MakeBinaryExpression(Expression.Equal, lhs, rhs, IsNullValue(lhs) || IsNullValue(rhs));
                 case TokenType.EqualsI:
