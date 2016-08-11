@@ -43,7 +43,7 @@ namespace Freesia.Internal
             }
             if (ast.Token.Type == TokenType.IndexerNode)
                 return MakeIndexerExpression(ast.Left, ast.Right);
-            if (!ast.Token.IsOperator)
+            if (!ast.Token.Type.IsOperator())
                 return ast.Token;
             switch (ast.Token.Type)
             {
@@ -53,6 +53,10 @@ namespace Freesia.Internal
                     return MakeMethodInvokeExpression(ast.Left, ast.Right);
                 case TokenType.Not:
                     return MakeUnaryExpression(Expression.Not, CompileOne(ast.Left));
+                case TokenType.UnaryPlus:
+                    return MakeUnaryExpression(Expression.UnaryPlus, CompileOne(ast.Left));
+                case TokenType.UnaryMinus:
+                    return MakeUnaryExpression(Expression.Negate, CompileOne(ast.Left));
             }
             var lhs = CompileOne(ast.Left);
             var rhs = CompileOne(ast.Right);
@@ -68,6 +72,28 @@ namespace Freesia.Internal
             }
             switch (ast.Token.Type)
             {
+                case TokenType.Plus:
+                    return MakeBinaryExpression(Expression.Add, lhs, rhs, true);
+                case TokenType.Minus:
+                    return MakeBinaryExpression(Expression.Subtract, lhs, rhs, true);
+                case TokenType.Multiply:
+                    return MakeBinaryExpression(Expression.Multiply,
+                        GetValueType(lhs) == typeof(double) || GetValueType(rhs) == typeof(double)
+                            ? Expression.Convert(MakeExpression(lhs), typeof(double)) : lhs,
+                        GetValueType(lhs) == typeof(double) || GetValueType(rhs) == typeof(double)
+                            ? Expression.Convert(MakeExpression(rhs), typeof(double)) : rhs, true);
+                case TokenType.Divide:
+                    return MakeBinaryExpression(Expression.Divide,
+                        GetValueType(lhs) == typeof(double) || GetValueType(rhs) == typeof(double)
+                            ? Expression.Convert(MakeExpression(lhs), typeof(double)) : lhs,
+                        GetValueType(lhs) == typeof(double) || GetValueType(rhs) == typeof(double)
+                            ? Expression.Convert(MakeExpression(rhs), typeof(double)) : rhs, true);
+                case TokenType.Modulo:
+                    return MakeBinaryExpression(Expression.Modulo, lhs, rhs, true);
+                case TokenType.ShiftLeft:
+                    return MakeBinaryExpression(Expression.LeftShift, lhs, Expression.Convert(MakeExpression(rhs), typeof(int)), true);
+                case TokenType.ShiftRight:
+                    return MakeBinaryExpression(Expression.RightShift, lhs, Expression.Convert(MakeExpression(rhs), typeof(int)), true);
                 case TokenType.Equals:
                     return MakeBinaryExpression(Expression.Equal, lhs, rhs, IsNullValue(lhs) || IsNullValue(rhs));
                 case TokenType.EqualsI:

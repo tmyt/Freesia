@@ -17,6 +17,15 @@ namespace Freesia.Internal
         {
             switch (t.Type)
             {
+                case TokenType.UnaryPlus:
+                case TokenType.UnaryMinus:
+                case TokenType.Plus:
+                case TokenType.Minus:
+                case TokenType.Multiply:
+                case TokenType.Divide:
+                case TokenType.Modulo:
+                case TokenType.ShiftLeft:
+                case TokenType.ShiftRight:
                 case TokenType.Equals:
                 case TokenType.EqualsI:
                 case TokenType.NotEquals:

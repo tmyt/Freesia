@@ -42,6 +42,7 @@
     <Compile Include="FilterCompiler.cs" />
     <Compile Include="Internal\EnvironmentMap.cs" />
     <Compile Include="Internal\Extensions\StringExtensions.cs" />
+    <Compile Include="Internal\Extensions\TokenTypeExtensions.cs" />
     <Compile Include="Types\IASTNode.cs" />
     <Compile Include="Internal\ASTBuilder.cs" />
     <Compile Include="Internal\ExpressionBuilder.cs" />

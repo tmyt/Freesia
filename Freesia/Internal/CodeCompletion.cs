@@ -25,6 +25,17 @@ namespace Freesia.Internal
             // プロパティ/メソッドを検索
             Type type = last.TypeInfo, baseType = type;
             var lookup = last.Value?.ToLowerInvariant();
+            if (last.SubType == TokenType.InvokeMethod)
+            {
+                // メソッド呼び出しなら空
+                return Enumerable.Empty<string>();
+            }
+            if (last.SubType.IsOperator() && last.SubType != TokenType.PropertyAccess)
+            {
+                // 終端が演算子ならprefixと検索する型をクリア
+                lookup = "";
+                type = typeof (T);
+            }
             if (last.SubType == TokenType.PropertyAccess)
             {
                 // プロパティアクセスの手前がErrorの場合は空
@@ -68,8 +79,15 @@ namespace Freesia.Internal
         private static bool IsBooleanOperator(SyntaxInfo token)
         {
             return token.Type == SyntaxType.Operator
-                && token.SubType != TokenType.PropertyAccess
-                && token.SubType != TokenType.InvokeMethod;
+                   && token.SubType != TokenType.PropertyAccess
+                   && token.SubType != TokenType.InvokeMethod
+                   && token.SubType != TokenType.UnaryPlus
+                   && token.SubType != TokenType.UnaryMinus
+                   && token.SubType != TokenType.Plus
+                   && token.SubType != TokenType.Minus
+                   && token.SubType != TokenType.Multiply
+                   && token.SubType != TokenType.Divide
+                   && token.SubType != TokenType.Modulo;
         }
     }
 }

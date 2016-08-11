@@ -1,5 +1,5 @@
 ﻿using System;
-using Freesia.Internal.Types;
+using Freesia.Internal.Extensions;
 
 namespace Freesia.Types
 {
@@ -41,26 +41,15 @@ namespace Freesia.Types
             return $"{Type}: {Value}";
         }
 
-        public bool IsOperator => Operators.Priority.ContainsKey(this.Type);
+        public bool IsOperator => this.Type.IsOperator();
 
-        public bool IsBooleanOperator => IsOperator
-                                         && this.Type != TokenType.PropertyAccess
-                                         && this.Type != TokenType.InvokeMethod;
+        public bool IsBooleanOperator => this.Type.IsBooleanOperator();
 
-        public bool IsSymbol => this.Type == TokenType.Symbol
-                                || this.Type == TokenType.String
-                                || this.Type == TokenType.Double
-                                || this.Type == TokenType.Long
-                                || this.Type == TokenType.ULong
-                                || this.Type == TokenType.Bool
-                                || this.Type == TokenType.Null;
+        public bool IsUnaryOperator => this.Type.IsUnaryOperator();
 
-        public bool IsConstant => this.Type == TokenType.String
-                                  || this.Type == TokenType.Double
-                                  || this.Type == TokenType.Long
-                                  || this.Type == TokenType.ULong
-                                  || this.Type == TokenType.Bool
-                                  || this.Type == TokenType.Null;
+        public bool IsSymbol => this.Type.IsSymbol();
+
+        public bool IsConstant => this.Type.IsConstant();
     }
 
     public enum SyntaxType
@@ -76,6 +65,15 @@ namespace Freesia.Types
 
     public enum TokenType
     {
+        UnaryPlus,
+        UnaryMinus,
+        Plus,
+        Minus,
+        Multiply,
+        Divide,
+        Modulo,
+        ShiftLeft,
+        ShiftRight,
         Equals,
         EqualsI,
         NotEquals,
