@@ -30,7 +30,7 @@ namespace Freesia.Internal
                 // メソッド呼び出しなら空
                 return Enumerable.Empty<string>();
             }
-            if (last.SubType.IsOperator() && last.SubType != TokenType.PropertyAccess)
+            if (last.Type == SyntaxType.Operator && last.SubType != TokenType.PropertyAccess)
             {
                 // 終端が演算子ならprefixと検索する型をクリア
                 lookup = "";
