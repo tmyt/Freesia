@@ -41,26 +41,15 @@ namespace Freesia.Types
             return $"{Type}: {Value}";
         }
 
-        public bool IsOperator => Operators.Priority.ContainsKey(this.Type);
+        public bool IsOperator => this.Type.IsOperator();
 
-        public bool IsBooleanOperator => IsOperator
-                                         && this.Type != TokenType.PropertyAccess
-                                         && this.Type != TokenType.InvokeMethod;
+        public bool IsBooleanOperator => this.Type.IsBooleanOperator();
 
-        public bool IsSymbol => this.Type == TokenType.Symbol
-                                || this.Type == TokenType.String
-                                || this.Type == TokenType.Double
-                                || this.Type == TokenType.Long
-                                || this.Type == TokenType.ULong
-                                || this.Type == TokenType.Bool
-                                || this.Type == TokenType.Null;
+        public bool IsUnaryOperator => this.Type.IsUnaryOperator();
 
-        public bool IsConstant => this.Type == TokenType.String
-                                  || this.Type == TokenType.Double
-                                  || this.Type == TokenType.Long
-                                  || this.Type == TokenType.ULong
-                                  || this.Type == TokenType.Bool
-                                  || this.Type == TokenType.Null;
+        public bool IsSymbol => this.Type.IsSymbol();
+
+        public bool IsConstant => this.Type.IsConstant();
     }
 
     public enum SyntaxType
@@ -76,6 +65,13 @@ namespace Freesia.Types
 
     public enum TokenType
     {
+        UnaryPlus,
+        UnaryMinus,
+        Plus,
+        Minus,
+        Multiply,
+        Divide,
+        Modulo,
         Equals,
         EqualsI,
         NotEquals,
@@ -115,5 +111,55 @@ namespace Freesia.Types
         Null,
         Nop,
         Error,
+    }
+
+    public static class TokenTypeExtensions
+    {
+        public static bool IsOperator(this TokenType that)
+        {
+            return Operators.Priority.ContainsKey(that);
+        }
+
+        public static bool IsBooleanOperator(this TokenType that)
+        {
+            return that.IsOperator()
+                   && that != TokenType.PropertyAccess
+                   && that != TokenType.InvokeMethod
+                   && that != TokenType.UnaryPlus
+                   && that != TokenType.UnaryMinus
+                   && that != TokenType.Plus
+                   && that != TokenType.Minus
+                   && that != TokenType.Multiply
+                   && that != TokenType.Divide
+                   && that != TokenType.Modulo;
+        }
+
+        public static bool IsUnaryOperator(this TokenType that)
+        {
+            return that == TokenType.UnaryPlus
+                   || that == TokenType.UnaryMinus
+                   || that == TokenType.Not;
+        }
+
+        public static bool IsSymbol(this TokenType that)
+        {
+            return that == TokenType.Symbol
+                   || that == TokenType.String
+                   || that == TokenType.Double
+                   || that == TokenType.Long
+                   || that == TokenType.ULong
+                   || that == TokenType.Bool
+                   || that == TokenType.Null;
+        }
+
+        public static bool IsConstant(this TokenType that)
+        {
+            return that == TokenType.String
+                   || that == TokenType.Double
+                   || that == TokenType.Long
+                   || that == TokenType.ULong
+                   || that == TokenType.Bool
+                   || that == TokenType.Null;
+        }
     }
 }

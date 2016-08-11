@@ -71,7 +71,8 @@ namespace Freesia.Internal
                 return (s == "true" || s == "false") ? TokenType.Bool : (s == "null" ? TokenType.Null : TokenType.Symbol);
             }
             if (point) return TokenType.Double;
-            return signed ? TokenType.Long : TokenType.ULong;
+            //return signed ? TokenType.Long : TokenType.ULong;
+            return  TokenType.Long;
         }
 
         public IEnumerable<CompilerToken> Parse(bool errorRecovery = false)
@@ -245,18 +246,33 @@ namespace Freesia.Internal
                         else
                             yield return new CompilerToken { Type = TokenType.LessThan, Position = start, Length = 1 };
                         break;
+                    case '+':
+                        yield return new CompilerToken { Type = TokenType.Plus, Position = start, Length = 1 };
+                        break;
+                    case '-':
+                        yield return new CompilerToken { Type = TokenType.Minus, Position = start, Length = 1 };
+                        break;
+                    case '*':
+                        yield return new CompilerToken { Type = TokenType.Multiply, Position = start, Length = 1 };
+                        break;
+                    case '/':
+                        yield return new CompilerToken { Type = TokenType.Divide, Position = start, Length = 1 };
+                        break;
+                    case '%':
+                        yield return new CompilerToken { Type = TokenType.Modulo, Position = start, Length = 1 };
+                        break;
                     // 文字列とか数字とかそのへん
                     default:
                         var str = "" + current;
                         switch (DeterminTokenType(str))
                         {
                             case TokenType.Symbol:
-                                str += TakeWhile('(', ')', '{', '}', '[', ']', ',', '.', '=', '!', '&', '|', '"', '\'', '>', '<', ' ', '\t', '\r', '\n');
+                                str += TakeWhile('(', ')', '{', '}', '[', ']', ',', '.', '=', '!', '&', '|', '"', '\'', '>', '<', '+', '-', '*', '/', '%', ' ', '\t', '\r', '\n');
                                 break;
                             case TokenType.Double:
                             case TokenType.Long:
                             case TokenType.ULong:
-                                str += TakeWhile('(', ')', '{', '}', '[', ']', ',', '=', '!', '&', '|', '"', '\'', '>', '<', ' ', '\t', '\r', '\n');
+                                str += TakeWhile('(', ')', '{', '}', '[', ']', ',', '=', '!', '&', '|', '"', '\'', '>', '<', '+', '-', '*', '/', '%', ' ', '\t', '\r', '\n');
                                 break;
                         }
                         if (!String.IsNullOrEmpty(str))

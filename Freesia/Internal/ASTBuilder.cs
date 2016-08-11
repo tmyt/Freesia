@@ -17,7 +17,7 @@ namespace Freesia.Internal
         {
             var rhs = values.Count > 0 ? values.Pop() : NopNode(op);
             var lhs = values.Count > 0 ? values.Pop() : NopNode(op);
-            return op.Type == TokenType.Not
+            return op.IsUnaryOperator
                 ? new ASTNode { Token = op, Left = rhs }
                 : new ASTNode { Token = op, Left = lhs, Right = rhs };
         }
@@ -40,6 +40,12 @@ namespace Freesia.Internal
                 var token = _token; // make writeable
                 p1 = p2;
                 p2 = token;
+                // check unary operator
+                if ((p2.Type == TokenType.Plus || p2.Type == TokenType.Minus)
+                    && (p1?.IsOperator).GetValueOrDefault(true))
+                {
+                    token.Type = token.Type == TokenType.Plus ? TokenType.UnaryPlus : TokenType.UnaryMinus;
+                }
                 // take symbol continuasly, it's seems error. try to recovery it.
                 if (p2.IsSymbol && (p1?.IsSymbol).GetValueOrDefault())
                 {
@@ -137,7 +143,7 @@ namespace Freesia.Internal
                 if (token.Type == TokenType.InvokeMethod)
                     ops.Push(new CompilerToken { Type = TokenType.OpenBracket, Value = "(", Length = 1, Position = token.Position });
                 // add pseudo value
-                if (token.Type == TokenType.Not)
+                if (token.IsUnaryOperator)
                     values.Push(new ASTNode(new CompilerToken { Type = TokenType.Nop }));
             }
             // return empty ast

@@ -68,8 +68,15 @@ namespace Freesia.Internal
         private static bool IsBooleanOperator(SyntaxInfo token)
         {
             return token.Type == SyntaxType.Operator
-                && token.SubType != TokenType.PropertyAccess
-                && token.SubType != TokenType.InvokeMethod;
+                   && token.SubType != TokenType.PropertyAccess
+                   && token.SubType != TokenType.InvokeMethod
+                   && token.SubType != TokenType.UnaryPlus
+                   && token.SubType != TokenType.UnaryMinus
+                   && token.SubType != TokenType.Plus
+                   && token.SubType != TokenType.Minus
+                   && token.SubType != TokenType.Multiply
+                   && token.SubType != TokenType.Divide
+                   && token.SubType != TokenType.Modulo;
         }
     }
 }
