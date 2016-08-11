@@ -82,6 +82,10 @@ namespace Freesia.Internal
                     return MakeBinaryExpression(Expression.Divide, lhs, rhs);
                 case TokenType.Modulo:
                     return MakeBinaryExpression(Expression.Modulo, lhs, rhs);
+                case TokenType.ShiftLeft:
+                    return MakeBinaryExpression(Expression.LeftShift, lhs, Expression.Convert(MakeExpression(rhs), typeof(int)));
+                case TokenType.ShiftRight:
+                    return MakeBinaryExpression(Expression.RightShift, lhs, Expression.Convert(MakeExpression(rhs), typeof(int)));
                 case TokenType.Equals:
                     return MakeBinaryExpression(Expression.Equal, lhs, rhs, IsNullValue(lhs) || IsNullValue(rhs));
                 case TokenType.EqualsI:

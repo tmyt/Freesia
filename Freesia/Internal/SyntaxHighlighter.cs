@@ -24,6 +24,8 @@ namespace Freesia.Internal
                 case TokenType.Multiply:
                 case TokenType.Divide:
                 case TokenType.Modulo:
+                case TokenType.ShiftLeft:
+                case TokenType.ShiftRight:
                 case TokenType.Equals:
                 case TokenType.EqualsI:
                 case TokenType.NotEquals:

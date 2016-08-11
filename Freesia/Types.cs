@@ -72,6 +72,8 @@ namespace Freesia.Types
         Multiply,
         Divide,
         Modulo,
+        ShiftLeft,
+        ShiftRight,
         Equals,
         EqualsI,
         NotEquals,
@@ -131,7 +133,9 @@ namespace Freesia.Types
                    && that != TokenType.Minus
                    && that != TokenType.Multiply
                    && that != TokenType.Divide
-                   && that != TokenType.Modulo;
+                   && that != TokenType.Modulo
+                   && that != TokenType.ShiftLeft
+                   && that != TokenType.ShiftRight;
         }
 
         public static bool IsUnaryOperator(this TokenType that)

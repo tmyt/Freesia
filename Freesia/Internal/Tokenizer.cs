@@ -72,7 +72,7 @@ namespace Freesia.Internal
             }
             if (point) return TokenType.Double;
             //return signed ? TokenType.Long : TokenType.ULong;
-            return  TokenType.Long;
+            return TokenType.Long;
         }
 
         public IEnumerable<CompilerToken> Parse(bool errorRecovery = false)
@@ -235,16 +235,32 @@ namespace Freesia.Internal
                         qchar = '\'';
                         break;
                     case '>':
-                        if (LexChars('=') != 0)
-                            yield return new CompilerToken { Type = TokenType.GreaterThanEquals, Position = start, Length = 2 };
-                        else
-                            yield return new CompilerToken { Type = TokenType.GreaterThan, Position = start, Length = 1 };
+                        switch (LexChars('=', '>'))
+                        {
+                            case '=':
+                                yield return new CompilerToken { Type = TokenType.GreaterThanEquals, Position = start, Length = 2 };
+                                break;
+                            case '>':
+                                yield return new CompilerToken { Type = TokenType.ShiftRight, Position = start, Length = 2 };
+                                break;
+                            default:
+                                yield return new CompilerToken { Type = TokenType.GreaterThan, Position = start, Length = 1 };
+                                break;
+                        }
                         break;
                     case '<':
-                        if (LexChars('=') != 0)
-                            yield return new CompilerToken { Type = TokenType.LessThanEquals, Position = start, Length = 2 };
-                        else
-                            yield return new CompilerToken { Type = TokenType.LessThan, Position = start, Length = 1 };
+                        switch (LexChars('=', '<'))
+                        {
+                            case '=':
+                                yield return new CompilerToken { Type = TokenType.GreaterThanEquals, Position = start, Length = 2 };
+                                break;
+                            case '<':
+                                yield return new CompilerToken { Type = TokenType.ShiftLeft, Position = start, Length = 2 };
+                                break;
+                            default:
+                                yield return new CompilerToken { Type = TokenType.GreaterThan, Position = start, Length = 1 };
+                                break;
+                        }
                         break;
                     case '+':
                         yield return new CompilerToken { Type = TokenType.Plus, Position = start, Length = 1 };
