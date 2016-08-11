@@ -252,13 +252,13 @@ namespace Freesia.Internal
                         switch (LexChars('=', '<'))
                         {
                             case '=':
-                                yield return new CompilerToken { Type = TokenType.GreaterThanEquals, Position = start, Length = 2 };
+                                yield return new CompilerToken { Type = TokenType.LessThanEquals, Position = start, Length = 2 };
                                 break;
                             case '<':
                                 yield return new CompilerToken { Type = TokenType.ShiftLeft, Position = start, Length = 2 };
                                 break;
                             default:
-                                yield return new CompilerToken { Type = TokenType.GreaterThan, Position = start, Length = 1 };
+                                yield return new CompilerToken { Type = TokenType.LessThan, Position = start, Length = 1 };
                                 break;
                         }
                         break;
