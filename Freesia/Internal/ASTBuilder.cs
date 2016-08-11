@@ -67,7 +67,7 @@ namespace Freesia.Internal
                 if (token.Type == TokenType.ArrayEnd) inArray = false;
                 // check ArrayDelimiter
                 if (inArray && p1 != null &&
-                    (p1.IsConstant || p1.IsSymbol) && (p2.IsConstant||p2.IsSymbol))
+                    (p1.IsConstant || p1.IsSymbol) && (p2.IsConstant || p2.IsSymbol))
                     throw new ParseException("Array elements must be delimitered ','.", -1);
                 // enter Array parsing
                 if (token.Type == TokenType.ArrayStart) inArray = true;
@@ -215,7 +215,7 @@ namespace Freesia.Internal
                     }
                     else
                     {
-                        arrayNode = new ASTNode {Right = arrayNode, Token = node.Token};
+                        arrayNode = new ASTNode { Right = arrayNode, Token = node.Token };
                     }
                 }
                 else if (arrayNode.Right == null)
@@ -231,11 +231,17 @@ namespace Freesia.Internal
                 values.Pop();
                 node = values.Peek();
             }
-            arrayNode.Token = new CompilerToken { Type = TokenType.ArrayNode, Value = "{", Length = 1, Position = node.Token.Position };
-            if (arrayNode.Left == null)
+            var arrayToken = new CompilerToken { Type = TokenType.ArrayNode, Value = "{", Length = 1, Position = node.Token.Position };
+            if (arrayNode.Token == null)
             {
+                arrayNode.Token = arrayToken;
                 arrayNode.Left = arrayNode.Right;
-                arrayNode.Right = null;
+                arrayNode.Right = NopNode(arrayNode.Left.Token);
+            }
+            else
+            {
+                arrayNode = new ASTNode(arrayToken) { Left = arrayNode };
+                arrayNode.Right = NopNode(arrayNode.Left.Token);
             }
             values.Pop();
             return arrayNode;

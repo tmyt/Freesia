@@ -26,8 +26,13 @@ namespace Freesia.Internal
             if (ast.Token.Type == TokenType.ArrayNode)
             {
                 var items = new List<object>();
-                if (ast.Left != null) items.Add(ast.Left.Token);
-                var current = ast.Right;
+                var current = ast.Left;
+                if(current == null) return new object[0];
+                if (current.Token.Type != TokenType.ArrayDelimiter)
+                {
+                    items.Add(current.Token);
+                    return items.ToArray();
+                }
                 while (current != null)
                 {
                     if (current.Token.Type == TokenType.ArrayDelimiter)
