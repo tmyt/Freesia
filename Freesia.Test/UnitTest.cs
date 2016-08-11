@@ -355,6 +355,7 @@ namespace Freesia.Test
                 SyntaxType.Operator,
                 SyntaxType.Operator,
                 SyntaxType.String,
+                SyntaxType.Operator,
                 SyntaxType.String,
                 SyntaxType.Operator,
                 SyntaxType.String
