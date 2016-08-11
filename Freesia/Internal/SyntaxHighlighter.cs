@@ -138,17 +138,19 @@ namespace Freesia.Internal
                 }
                 return;
             }
-            if (node.Token.Type == TokenType.ArrayNode)
-            {
-                node.DeterminedType = typeof(object[]);
-                return;
-            }
 
             // process left node (and update ``node.Left.DeterminedType'' value)
             UpdateASTNodeType(node.Left, parentNodeType, lambdaEnv);
             // process right node
             UpdateASTNodeType(node.Right, node.Token.Type == TokenType.ArrayNode || node.Left == null || node.Left.Token.IsBooleanOperator ?
                 null : node.Left?.DeterminedType, lambdaEnv);
+
+            // override array node type
+            if (node.Token.Type == TokenType.ArrayNode)
+            {
+                node.DeterminedType = typeof(object[]);
+                return;
+            }
 
             // info is no Operator
             if (info.Type != SyntaxType.Operator)
