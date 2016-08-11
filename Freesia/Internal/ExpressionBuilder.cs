@@ -27,7 +27,7 @@ namespace Freesia.Internal
             {
                 var items = new List<object>();
                 var current = ast.Left;
-                if(current == null) return new object[0];
+                if (current == null) return new object[0];
                 if (current.Token.Type != TokenType.ArrayDelimiter)
                 {
                     items.Add(current.Token);
@@ -391,7 +391,8 @@ namespace Freesia.Internal
             var valueExpr = MakeNullableAccessExpression(expr);
             if (IsNullable(lhs) && rhs.Value.ToLowerInvariant() == "hasvalue") valueExpr = expr;
             var leftType = valueExpr.Type;
-            if (!rhs.IsSymbol) throw new ParseException("Property accessor rhs should be Symbol.", rhs.Position);
+            if (rhs == null || !rhs.IsSymbol)
+                throw new ParseException("Property accessor rhs should be Symbol.", (rhs?.Position).GetValueOrDefault(-1));
             if (valueExpr.Type == typeof(UserFunctionTypePlaceholder))
             {
                 if (!Functions.ContainsKey(rhs.Value.ToLowerInvariant()))

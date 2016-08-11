@@ -34,7 +34,7 @@ namespace Freesia.Internal
             {
                 // 終端が演算子ならprefixと検索する型をクリア
                 lookup = "";
-                type = typeof (T);
+                type = typeof(T);
             }
             if (last.SubType == TokenType.PropertyAccess)
             {
