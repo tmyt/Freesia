@@ -348,6 +348,8 @@ namespace Freesia.Test
             FilterCompiler.SyntaxHighlight<TestClass>("null");
             FilterCompiler.SyntaxHighlight<TestClass>("true");
             FilterCompiler.SyntaxHighlight<TestClass>("0.5");
+            FilterCompiler.SyntaxHighlight<TestClass>(
+                "ints.any(x => x =@ 'xxx')");
             var info = FilterCompiler.SyntaxHighlight<TestClass>(
                 "text == {'a', 'b', 'c'}").ToArray();
             AreSequenceEeual(a => a.Type, info,
@@ -556,6 +558,7 @@ namespace Freesia.Test
         public void MethodInvokeTest()
         {
             var a = new TestClass { Ints = new[] { "https://www.example.com/" } };
+            Assert.IsTrue(RunTest("ints.where(x => x =@ 'www').count() > 0", a));
             Assert.IsTrue(RunTest("ints.contains(x => x =@i 'example')", a));
             Assert.IsTrue(RunTest("ints.any()", a));
             //FilterCompiler.Compile<TestClass>("entities.urls.contains(x => x =@i 'example')");
