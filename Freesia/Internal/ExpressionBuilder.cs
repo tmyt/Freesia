@@ -30,14 +30,14 @@ namespace Freesia.Internal
                 if (current == null) return new object[0];
                 if (current.Token.Type != TokenType.ArrayDelimiter)
                 {
-                    items.Add(current.Token);
+                    items.Add(CompileOne(current));
                     return items.ToArray();
                 }
                 while (current != null)
                 {
                     if (current.Token.Type == TokenType.ArrayDelimiter)
                     {
-                        items.Add(current.Left.Token);
+                        items.Add(CompileOne(current.Left));
                         current = current.Right;
                         continue;
                     }
@@ -405,7 +405,7 @@ namespace Freesia.Internal
         {
             if (lhs.Token.Type != TokenType.PropertyAccess)
                 throw new ParseException("Invoke method requires property access.", lhs.Token.Position);
-            var rootExpr = MakeExpression(CompileOne(lhs.Left));
+            var rootExpr = MakeExpression(CastIfNeeded(CompileOne(lhs.Left)));
             var ie = rootExpr.Type.GetUnderlyingEnumerableType();
             if (ie == null)
                 throw new ParseException("Method only apply to IE<T>.", lhs.Token.Position);
@@ -516,6 +516,14 @@ namespace Freesia.Internal
             return stack.Select(x => x.Token.Type == TokenType.Lambda
                 ? MakeLambdaExpression(elementType, x.Left.Token, x.Right)
                 : MakeExpression(CompileOne(x))).ToArray();
+        }
+
+        private Expression MakeNewArrayExpression(object[] nodes)
+        {
+            var exprs = nodes.Select(MakeExpression).ToArray();
+            var types = exprs.Select(x => x.Type).Distinct().ToArray();
+            var type = types.Length == 1 ? types[0] : typeof (object);
+            return Expression.NewArrayInit(type, exprs);
         }
 
         private bool MayNullable(object o, bool checkRecursive = true)
@@ -696,5 +704,12 @@ namespace Freesia.Internal
             return propInfo.PropertyType;
         }
 
+        private object CastIfNeeded(object o)
+        {
+            if (o.GetType() != typeof(object[])) return o;
+            // public static IEnumerable<TResult> Cast<TResult>(this IEnumerable source);
+            var objects = (object[])o;
+            return MakeNewArrayExpression(objects);
+        }
     }
 }
