@@ -83,16 +83,12 @@ namespace Freesia.Internal
                     return MakeBinaryExpression(Expression.Subtract, lhs, rhs, true);
                 case TokenType.Multiply:
                     return MakeBinaryExpression(Expression.Multiply,
-                        GetValueType(lhs) == typeof(double) || GetValueType(rhs) == typeof(double)
-                            ? Expression.Convert(MakeExpression(lhs), typeof(double)) : lhs,
-                        GetValueType(lhs) == typeof(double) || GetValueType(rhs) == typeof(double)
-                            ? Expression.Convert(MakeExpression(rhs), typeof(double)) : rhs, true);
+                        OfType<double>(lhs) || OfType<double>(rhs) ? Expression.Convert(MakeExpression(lhs), typeof(double)) : lhs,
+                        OfType<double>(lhs) || OfType<double>(rhs) ? Expression.Convert(MakeExpression(rhs), typeof(double)) : rhs, true);
                 case TokenType.Divide:
                     return MakeBinaryExpression(Expression.Divide,
-                        GetValueType(lhs) == typeof(double) || GetValueType(rhs) == typeof(double)
-                            ? Expression.Convert(MakeExpression(lhs), typeof(double)) : lhs,
-                        GetValueType(lhs) == typeof(double) || GetValueType(rhs) == typeof(double)
-                            ? Expression.Convert(MakeExpression(rhs), typeof(double)) : rhs, true);
+                        OfType<double>(lhs) || OfType<double>(rhs) ? Expression.Convert(MakeExpression(lhs), typeof(double)) : lhs,
+                        OfType<double>(lhs) || OfType<double>(rhs) ? Expression.Convert(MakeExpression(rhs), typeof(double)) : rhs, true);
                 case TokenType.Modulo:
                     return MakeBinaryExpression(Expression.Modulo, lhs, rhs, true);
                 case TokenType.ShiftLeft:
@@ -626,6 +622,11 @@ namespace Freesia.Internal
                 }
             }
             throw new ArgumentException("Can't determin Type.");
+        }
+
+        public bool OfType<TArg>(object o)
+        {
+            return GetValueType(o) == typeof(TArg);
         }
 
         private object GetConstantValue(object o)
