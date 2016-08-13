@@ -369,15 +369,14 @@ namespace Freesia.Internal
         private Expression MakeIndexerExpression(ASTNode prop, ASTNode indexer)
         {
             var property = MakeExpression(CastIfNeeded(CompileOne(prop)));
-            var i = GetConstantValue(indexer.Token);
-            if (i is Double) throw new ParseException("Indexer should be int value.", indexer.Token.Position);
+            var i = MakeExpression(CompileOne(indexer));
+            if (i.Type == typeof(double)) throw new ParseException("Indexer should be int value.", indexer.Token.Position);
             if (property.Type.IsArray)
-                return Expression.ArrayIndex(property, Expression.Constant(Convert.ToInt32(i)));
+                return Expression.ArrayIndex(property, Expression.Convert(i, typeof (int)));
             var propInfo = property.Type.GetRuntimeProperty("Item");
             if (propInfo == null)
                 throw new ParseException($"Property '{prop.Token.Value}' is not indexed type.", -1);
-            var e = Expression.Constant(Convert.ToInt32(i));
-            return Expression.MakeIndex(property, propInfo, new[] { e });
+            return Expression.MakeIndex(property, propInfo, new[] { Expression.Convert(i, typeof(int)) });
         }
 
         private Expression MakeMemberAccessExpression(object lhs, CompilerToken rhs)
