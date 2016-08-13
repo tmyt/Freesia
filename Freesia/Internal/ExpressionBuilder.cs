@@ -368,7 +368,7 @@ namespace Freesia.Internal
 
         private Expression MakeIndexerExpression(ASTNode prop, ASTNode indexer)
         {
-            var property = MakeExpression(prop.Token);
+            var property = MakeExpression(CastIfNeeded(CompileOne(prop)));
             var i = GetConstantValue(indexer.Token);
             if (i is Double) throw new ParseException("Indexer should be int value.", indexer.Token.Position);
             if (property.Type.IsArray)
