@@ -465,14 +465,9 @@ namespace Freesia.Internal
 
         private Expression MakeRegexExpression(Expression lhs, Expression rhs)
         {
-            var ctor = Expression.New(
-                    typeof(Regex).GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 2),
+            var ctor = Expression.New(Cache.RegexCtor.Value,
                     rhs, Expression.Constant(RegexOptions.Singleline));
-            var regexObj = Expression.Parameter(typeof(Regex), "regex");
-            return Expression.Block(
-                new[] { regexObj },
-                Expression.Assign(regexObj, ctor),
-                Expression.Call(regexObj, Cache.RegexIsMatch.Value, lhs));
+            return Expression.Call(ctor, Cache.RegexIsMatch.Value, lhs);
         }
 
         private Expression MakeContainsExpression(Expression lhs, Expression rhs)
