@@ -57,8 +57,7 @@ namespace Freesia.Internal
 
         private TokenType DeterminTokenType(string str)
         {
-            var chars = new[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '-' };
-            var signed = str[0] == '-';
+            var chars = new[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '.' };
             var point = str.Contains(".");
             var mayDigits = true;
             for (var i = 0; i < str.Length; ++i)
@@ -71,8 +70,8 @@ namespace Freesia.Internal
                 return (s == "true" || s == "false") ? TokenType.Bool : (s == "null" ? TokenType.Null : TokenType.Symbol);
             }
             if (point) return TokenType.Double;
-            //return signed ? TokenType.Long : TokenType.ULong;
-            return TokenType.Long;
+            return str.Length < 10 || (str.Length == 10 && str.CompareTo("2147483647") <= 0)
+                ? TokenType.Long : TokenType.ULong;
         }
 
         public IEnumerable<CompilerToken> Parse(bool errorRecovery = false)
