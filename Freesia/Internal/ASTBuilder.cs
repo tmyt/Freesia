@@ -32,22 +32,22 @@ namespace Freesia.Internal
             var ops = new Stack<CompilerToken>();
             var values = new Stack<ASTNode>();
             var trees = new List<ASTNode>();
-            CompilerToken p1, p2 = null;
+            CompilerToken p2 = null;
             var inArray = false;
             var needRhs = false;
             foreach (var _token in list)
             {
                 var token = _token; // make writeable
-                p1 = p2;
+                var p1 = p2;
                 p2 = token;
                 // check unary operator
-                if ((p2.Type == TokenType.Plus || p2.Type == TokenType.Minus)
+                if ((token.Type == TokenType.Plus || token.Type == TokenType.Minus)
                     && (p1?.IsOperator).GetValueOrDefault(true))
                 {
                     token.Type = token.Type == TokenType.Plus ? TokenType.UnaryPlus : TokenType.UnaryMinus;
                 }
                 // take symbol continuasly, it's seems error. try to recovery it.
-                if (p2.IsSymbol && (p1?.IsSymbol).GetValueOrDefault())
+                if (token.IsSymbol && (p1?.IsSymbol).GetValueOrDefault())
                 {
                     // pop all ops
                     while (ops.Count != 0)
@@ -67,7 +67,7 @@ namespace Freesia.Internal
                 if (token.Type == TokenType.ArrayEnd) inArray = false;
                 // check ArrayDelimiter
                 if (inArray && p1 != null &&
-                    (p1.IsConstant || p1.IsSymbol) && (p2.IsConstant || p2.IsSymbol))
+                    (p1.IsConstant || p1.IsSymbol) && (token.IsConstant || token.IsSymbol))
                     throw new ParseException("Array elements must be delimitered ','.", -1);
                 // enter Array parsing
                 if (token.Type == TokenType.ArrayStart) inArray = true;
