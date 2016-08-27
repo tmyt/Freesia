@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 namespace Freesia.Internal
 {
-    class EnvironmentMap : Dictionary<string, Type>
+    class EnvironmentMap<T> : Dictionary<string, T>
     {
         public EnvironmentMap()
             : base(StringComparer.OrdinalIgnoreCase)
         { }
 
-        public EnvironmentMap(IDictionary<string, Type> source)
+        public EnvironmentMap(IDictionary<string, T> source)
             : base(source, StringComparer.OrdinalIgnoreCase)
         { }
     }

@@ -96,7 +96,7 @@ namespace Freesia.Internal
             return Helper.GetEnumerableExtendedMethodInfos().Where(m => m.Name.CompareIgnoreCaseTo(name));
         }
 
-        private static void UpdateASTNodeType(ASTNode node, Type parentNodeType = null, EnvironmentMap lambdaEnv = null)
+        private static void UpdateASTNodeType(ASTNode node, Type parentNodeType = null, EnvironmentMap<Type> lambdaEnv = null)
         {
             if (node == null) return;
             if (node.Token.Type == TokenType.Nop) return;
@@ -184,7 +184,7 @@ namespace Freesia.Internal
                     // update lambda related ast
                     arg.Left.DeterminedType = elementType;
                     arg.Left.Token.Type = TokenType.LambdaParameter;
-                    var env = lambdaEnv == null ? new EnvironmentMap() : new EnvironmentMap(lambdaEnv);
+                    var env = lambdaEnv == null ? new EnvironmentMap<Type>() : new EnvironmentMap<Type>(lambdaEnv);
                     env[arg.Left.Token.Value] = arg.Left.DeterminedType;
                     UpdateASTNodeType(arg.Right, null, env);
                     arg.DeterminedType = GetDelegateType(elementType, arg.Right.DeterminedType);

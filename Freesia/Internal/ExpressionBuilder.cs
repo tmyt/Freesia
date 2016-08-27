@@ -14,7 +14,7 @@ namespace Freesia.Internal
     internal class ExpressionBuilder<T> : CompilerConfig<T>
     {
         private readonly ParameterExpression _rootParameter = Expression.Parameter(typeof(T), "status");
-        private readonly Dictionary<string, ParameterExpression> _env = new Dictionary<string, ParameterExpression>();
+        private readonly EnvironmentMap<ParameterExpression> _env = new EnvironmentMap<ParameterExpression>();
 
         private delegate Expression BinaryExpressionBuilder(Expression lhs, Expression rhs);
 
