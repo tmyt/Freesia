@@ -45,6 +45,15 @@ namespace Freesia.Internal.Reflection
                         generics[g[j].Name] = argTypes[i].GenericTypeArguments[j];
                     }
                 }
+                else if (t.IsGenericParameter)
+                {
+                    if (generics[t.Name] != null)
+                    {
+                        if (generics[t.Name] != argTypes[i]) return null;
+                        continue;
+                    }
+                    generics[t.Name] = argTypes[i];
+                }
                 else
                 {
                     if (@params[i].ParameterType != argTypes[i]) return null;

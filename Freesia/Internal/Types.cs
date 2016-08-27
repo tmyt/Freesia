@@ -106,12 +106,4 @@ namespace Freesia.Internal.Types
             {TokenType.ArrayDelimiter, Types.Associativity.LeftToRight },
         };
     }
-
-    internal static class ExtensionMethods
-    {
-        public static Dictionary<string, Func<Type[], MethodInfo>> Methods = new Dictionary<string, Func<Type[], MethodInfo>>
-        {
-            { "contains", types => (MethodInfo)Cache.EnumerableAny.Value.MakeGenericMethod(types).Invoke(null, new object[0]) }
-        };
-    }
 }

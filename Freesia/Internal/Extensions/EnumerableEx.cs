@@ -8,7 +8,12 @@ namespace Freesia.Internal.Extensions
     {
         public static bool Contains<TSource>(this IEnumerable<TSource> source, Func<TSource, bool> predicate)
         {
-            return source.FirstOrDefault(predicate) != null;
+            return source.Any(predicate);
+        }
+
+        public static bool Contains<TSource>(this IEnumerable<TSource> source, TSource value)
+        {
+            return source.Any(x => x.Equals(value));
         }
     }
 }
