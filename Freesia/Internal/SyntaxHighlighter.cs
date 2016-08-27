@@ -142,7 +142,8 @@ namespace Freesia.Internal
             // process left node (and update ``node.Left.DeterminedType'' value)
             UpdateASTNodeType(node.Left, parentNodeType, lambdaEnv);
             // process right node
-            UpdateASTNodeType(node.Right, node.Token.IsBooleanOperator || node.Token.Type == TokenType.ArrayNode || node.Token.Type == TokenType.ArrayDelimiter || node.Left == null || node.Left.Token.IsBooleanOperator ?
+            UpdateASTNodeType(node.Right, node.Token.IsBooleanOperator || node.Token.Type == TokenType.ArrayNode || node.Token.Type == TokenType.ArrayDelimiter
+                || node.Token.Type == TokenType.IndexerNode || node.Left == null || node.Left.Token.IsBooleanOperator ?
                 null : node.Left?.DeterminedType, lambdaEnv);
 
             // override array node type
