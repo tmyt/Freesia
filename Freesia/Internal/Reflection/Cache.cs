@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -8,6 +9,8 @@ namespace Freesia.Internal.Reflection
     {
         public static Lazy<MethodInfo> RegexIsMatch { get; }
             = new Lazy<MethodInfo>(() => typeof(Regex).GetRuntimeMethod("IsMatch", new[] { typeof(string) }));
+        public static Lazy<ConstructorInfo> RegexCtor { get; }
+            = new Lazy<ConstructorInfo>(() => typeof(Regex).GetTypeInfo().DeclaredConstructors.FirstOrDefault(c => c.GetParameters().Length == 2)); 
         public static Lazy<MethodInfo> StringContains { get; }
             = new Lazy<MethodInfo>(() => typeof(string).GetRuntimeMethod("Contains", new[] { typeof(string) }));
         public static Lazy<MethodInfo> StringToLowerInvariant { get; }
