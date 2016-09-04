@@ -11,8 +11,6 @@ namespace Freesia.Internal
 {
     internal class SyntaxHighlighter<T> : CompilerConfig<T>
     {
-        private class ExtendedMethodPlaceholder { }
-
         private static SyntaxInfo TranslateSyntaxInfo(CompilerToken t)
         {
             switch (t.Type)

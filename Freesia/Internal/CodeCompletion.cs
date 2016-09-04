@@ -51,6 +51,8 @@ namespace Freesia.Internal
                 var token = syntax.Reverse().Skip(1).FirstOrDefault();
                 baseType = token == null || IsSymbol(token) || IsBooleanOperator(token) ?
                     null : token.TypeInfo;
+                if (token?.TypeInfo == typeof(ExtendedMethodPlaceholder))
+                    baseType = syntax.Reverse().Skip(2).FirstOrDefault()?.TypeInfo;
                 type = baseType ?? typeof(T);
             }
             if (type == null) return Enumerable.Empty<string>();
