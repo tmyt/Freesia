@@ -40,7 +40,7 @@ namespace Freesia.Internal
             {
                 // プロパティアクセスの手前がErrorの場合は空
                 var next = syntax.Reverse().Skip(1).FirstOrDefault();
-                if (next?.Type == SyntaxType.Error || (next?.Type == SyntaxType.Operator && next.SubType != TokenType.InvokeMethod))
+                if (next?.Type == SyntaxType.Error || (next?.Type == SyntaxType.Operator && next.SubType != TokenType.InvokeMethod && next.SubType != TokenType.ArrayNode))
                     return Enumerable.Empty<string>();
                 // prefixをクリア
                 lookup = "";
