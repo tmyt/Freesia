@@ -257,7 +257,20 @@ namespace Freesia.Internal
                 }
                 return e;
             }
-            return op(MakeExpression(lhs), MakeExpression(rhs));
+            var lhsExp = MakeExpression(lhs);
+            var rhsExp = MakeExpression(rhs);
+            if (op == Expression.Equal)
+            {
+                if (lhsExp.Type == typeof (char) && rhsExp.Type == typeof (string))
+                {
+                    return op(Expression.Call(lhsExp, Cache.CharToString.Value), rhsExp);
+                }
+                if (lhsExp.Type == typeof (string) && rhsExp.Type == typeof (char))
+                {
+                    return op(lhsExp, Expression.Call(rhsExp, Cache.CharToString.Value));
+                }
+            }
+            return op(lhsExp, rhsExp);
         }
 
         private Expression MakeInsensitiveBinaryExpression(BinaryExpressionBuilder op, object lhs, object rhs)

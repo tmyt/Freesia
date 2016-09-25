@@ -15,6 +15,8 @@ namespace Freesia.Internal.Reflection
             = new Lazy<MethodInfo>(() => typeof(string).GetRuntimeMethod("Contains", new[] { typeof(string) }));
         public static Lazy<MethodInfo> StringToLowerInvariant { get; }
             = new Lazy<MethodInfo>(() => typeof(string).GetRuntimeMethod("ToLowerInvariant", new Type[0]));
+        public static Lazy<MethodInfo> CharToString { get; }
+         = new Lazy<MethodInfo>(() => typeof(char).GetRuntimeMethod("ToString", new Type[0]));
 
         // Enumerable
         public static Lazy<MethodInfo> EnumerableAny { get; }
