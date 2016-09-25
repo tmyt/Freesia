@@ -179,10 +179,16 @@ namespace Freesia.Internal
                 foreach (var arg in args)
                 {
                     if (arg.Token.Type != TokenType.Lambda) continue;
+                    // prepare lamda env
+                    var env = lambdaEnv == null ? new EnvironmentMap<Type>() : new EnvironmentMap<Type>(lambdaEnv);
+                    if (env.ContainsKey(arg.Left.Token.Value))
+                    {
+                        arg.Left.Token.Type = TokenType.Error;
+                        continue;
+                    }
                     // update lambda related ast
                     arg.Left.DeterminedType = elementType;
                     arg.Left.Token.Type = TokenType.LambdaParameter;
-                    var env = lambdaEnv == null ? new EnvironmentMap<Type>() : new EnvironmentMap<Type>(lambdaEnv);
                     env[arg.Left.Token.Value] = arg.Left.DeterminedType;
                     UpdateASTNodeType(arg.Right, null, env);
                     arg.DeterminedType = arg.Right != null ? GetDelegateType(elementType, arg.Right.DeterminedType) : null;
