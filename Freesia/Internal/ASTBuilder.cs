@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Freesia.Internal.Extensions;
 using Freesia.Internal.Types;
 using Freesia.Types;
 
@@ -72,7 +73,7 @@ namespace Freesia.Internal
                 // enter Array parsing
                 if (token.Type == TokenType.ArrayStart) inArray = true;
                 // check arg needed
-                if (token.Type == TokenType.PropertyAccess) needRhs = true;
+                if (token.Type.IsBinaryOperator()) needRhs = true;
                 // correct token
                 if (token.IsSymbol || token.Type == TokenType.ArrayStart || token.Type == TokenType.IndexerStart)
                 {

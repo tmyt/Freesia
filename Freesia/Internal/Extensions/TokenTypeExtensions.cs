@@ -33,6 +33,11 @@ namespace Freesia.Internal.Extensions
                    || that == TokenType.Not;
         }
 
+        public static bool IsBinaryOperator(this TokenType that)
+        {
+            return that.IsOperator() && !that.IsUnaryOperator();
+        }
+
         public static bool IsSymbol(this TokenType that)
         {
             return that == TokenType.Symbol

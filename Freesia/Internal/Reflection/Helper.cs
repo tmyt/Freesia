@@ -33,7 +33,7 @@ namespace Freesia.Internal.Reflection
                 if (t.IsConstructedGenericType && (argTypes[i]?.IsConstructedGenericType ?? false))
                 {
                     var g = t.GenericTypeArguments;
-                    for (var j = 0; j < g.Length; ++j)
+                    for (var j = 0; j < g.Length && j < argTypes[i].GenericTypeArguments.Length; ++j)
                     {
                         if (!g[j].IsGenericParameter) continue;
                         if (generics[g[j].Name] != null)

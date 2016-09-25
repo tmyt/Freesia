@@ -141,7 +141,7 @@ namespace Freesia.Internal
             UpdateASTNodeType(node.Left, parentNodeType, lambdaEnv);
             // process right node
             UpdateASTNodeType(node.Right, node.Token.IsBooleanOperator || node.Token.Type == TokenType.ArrayNode || node.Token.Type == TokenType.ArrayDelimiter
-                || node.Token.Type == TokenType.IndexerNode || node.Left == null || node.Left.Token.IsBooleanOperator ?
+                || node.Token.Type == TokenType.IndexerNode || node.Token.Type == TokenType.InvokeMethod || node.Left == null || node.Left.Token.IsBooleanOperator ?
                 null : node.Left?.DeterminedType, lambdaEnv);
 
             // override array node type
@@ -185,7 +185,7 @@ namespace Freesia.Internal
                     var env = lambdaEnv == null ? new EnvironmentMap<Type>() : new EnvironmentMap<Type>(lambdaEnv);
                     env[arg.Left.Token.Value] = arg.Left.DeterminedType;
                     UpdateASTNodeType(arg.Right, null, env);
-                    arg.DeterminedType = GetDelegateType(elementType, arg.Right.DeterminedType);
+                    arg.DeterminedType = arg.Right != null ? GetDelegateType(elementType, arg.Right.DeterminedType) : null;
                 }
                 // fill generic parameter
                 var method = Helper.FindPreferredMethod(node.Left.Right.Token.Value,
