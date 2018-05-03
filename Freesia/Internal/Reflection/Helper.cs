@@ -56,7 +56,15 @@ namespace Freesia.Internal.Reflection
                 }
                 else
                 {
-                    if (@params[i].ParameterType != argTypes[i]) return null;
+                    // assignable argment[i] to parameter[i]
+                    if (@params[i].ParameterType.IsAssignableFrom(argTypes[i])) continue;
+                    // check generics
+                    if (!@params[i].ParameterType.IsConstructedGenericType) return null;
+                    // check assignable to constructed generic parameter
+                    var g = t.GenericTypeArguments;
+                    var gargs = g.Select(x => generics[x.Name]).ToArray();
+                    var gt = @params[i].ParameterType.GetGenericTypeDefinition().MakeGenericType(gargs);
+                    if (!gt.IsAssignableFrom(argTypes[i])) return null;
                 }
             }
             if (!m.IsGenericMethodDefinition) return m;
@@ -75,7 +83,8 @@ namespace Freesia.Internal.Reflection
         {
             var paramTypes = m.GetParameters();
             if (paramTypes.Length != argTypes.Length) return false;
-            return paramTypes.Select(p => p.ParameterType).SequenceEqual(argTypes);
+            return paramTypes.Select(p => p.ParameterType).Zip(argTypes, Tuple.Create)
+                .All(x => x.Item1.IsAssignableFrom(x.Item2));
         }
 
 #if false // may be unused

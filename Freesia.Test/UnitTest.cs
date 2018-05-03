@@ -13,6 +13,7 @@ namespace Freesia.Test
         public bool favorited { get; set; }
         public bool? B { get; set; }
         public string[] Ints { get; set; }
+        public string[] Ints2 { get; set; }
         public TestClass2 TestClass2 { get; set; }
     }
 
@@ -55,7 +56,6 @@ namespace Freesia.Test
         {
             CompilerConfig<TestClass>.UserFunctionNamespace = "user";
             CompilerConfig<TestClass>.Functions.Add("func", _ => true);
-            RunTest("user.func == false");
         }
 
         [TestMethod]
@@ -564,6 +564,17 @@ namespace Freesia.Test
             Assert.IsTrue(RunTest("ints.any()", a));
             //FilterCompiler.Compile<TestClass>("entities.urls.contains(x => x =@i 'example')");
             //FilterCompiler.Compile<TestClass>("method(a => a == 1)");
+        }
+
+        [TestMethod]
+        public void ArrayConcatTest()
+        {
+            var a = new TestClass
+            {
+                Ints = new[] {"a", "b", "c"},
+                Ints2 = new[] {"0", "1", "2"}
+            };
+            Assert.IsTrue(RunTest("ints.concat(ints2).count() > 0", a));
         }
 
         [TestMethod]

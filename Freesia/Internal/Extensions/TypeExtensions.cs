@@ -40,5 +40,10 @@ namespace Freesia.Internal.Extensions
         {
             return targetType?.GetCachedRuntimeProperties().FirstOrDefault(p => p.Name.CompareIgnoreCaseTo(propname));
         }
+
+        public static bool IsAssignableFrom(this Type from, Type to)
+        {
+            return from.GetTypeInfo().IsAssignableFrom(to.GetTypeInfo());
+        }
     }
 }
