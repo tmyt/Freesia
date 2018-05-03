@@ -50,6 +50,8 @@ namespace Freesia.Types
         public bool IsSymbol => this.Type.IsSymbol();
 
         public bool IsConstant => this.Type.IsConstant();
+
+        public bool IsOpenBrackets => this.Type.IsOpenBrackets();
     }
 
     public enum SyntaxType

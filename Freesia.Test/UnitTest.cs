@@ -567,6 +567,14 @@ namespace Freesia.Test
         }
 
         [TestMethod]
+        public void UnaryOperators()
+        {
+            Assert.IsTrue(RunTest("+10 == 10"));
+            Assert.IsTrue(RunTest("-(-10) == 10"));
+            Assert.IsTrue(RunTest("!true == false"));
+        }
+
+        [TestMethod]
         public void StressTest()
         {
             int Iteration = 50, c = 0;

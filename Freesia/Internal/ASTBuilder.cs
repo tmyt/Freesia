@@ -43,7 +43,7 @@ namespace Freesia.Internal
                 p2 = token;
                 // check unary operator
                 if ((token.Type == TokenType.Plus || token.Type == TokenType.Minus)
-                    && (p1?.IsOperator).GetValueOrDefault(true))
+                    && ((p1?.IsOperator).GetValueOrDefault(true) || (p1?.IsOpenBrackets).GetValueOrDefault(false)))
                 {
                     token.Type = token.Type == TokenType.Plus ? TokenType.UnaryPlus : TokenType.UnaryMinus;
                 }

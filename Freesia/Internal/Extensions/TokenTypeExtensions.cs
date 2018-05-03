@@ -58,5 +58,11 @@ namespace Freesia.Internal.Extensions
                    || that == TokenType.Bool
                    || that == TokenType.Null;
         }
+
+        public static bool IsOpenBrackets(this TokenType that)
+        {
+            return that == TokenType.OpenBracket
+                   || that == TokenType.ArrayStart;
+        }
     }
 }
