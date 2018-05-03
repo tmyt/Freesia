@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Freesia.Types;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -15,11 +16,16 @@ namespace Freesia.Test
         public string[] Ints { get; set; }
         public string[] Ints2 { get; set; }
         public TestClass2 TestClass2 { get; set; }
+        public char ch { get; set; }
     }
 
     class TestClass2
     {
         public string S { get; set; }
+        public bool argIsTen(int a)
+        {
+            return a == 10;
+        }
     }
 
     [TestClass]
@@ -558,12 +564,10 @@ namespace Freesia.Test
         [TestMethod]
         public void MethodInvokeTest()
         {
-            var a = new TestClass { Ints = new[] { "https://www.example.com/" } };
+            var a = new TestClass { Ints = new[] { "https://www.example.com/" }, TestClass2 = new TestClass2()};
             Assert.IsTrue(RunTest("ints.where(x => x =@ 'www').count() > 0", a));
             Assert.IsTrue(RunTest("ints.contains(x => x =@i 'example')", a));
             Assert.IsTrue(RunTest("ints.any()", a));
-            //FilterCompiler.Compile<TestClass>("entities.urls.contains(x => x =@i 'example')");
-            //FilterCompiler.Compile<TestClass>("method(a => a == 1)");
         }
 
         [TestMethod]
@@ -571,19 +575,54 @@ namespace Freesia.Test
         {
             var a = new TestClass
             {
-                Ints = new[] {"a", "b", "c"},
-                Ints2 = new[] {"0", "1", "2"}
+                Ints = new[] { "a", "b", "c" },
+                Ints2 = new[] { "0", "1", "2" }
             };
             Assert.IsTrue(RunTest("ints.concat(ints2).count() > 0", a));
         }
 
         [TestMethod]
-        public void UnaryOperators()
+        public void UnaryOperatorTest()
         {
             Assert.IsTrue(RunTest("+10 == 10"));
             Assert.IsTrue(RunTest("-(-10) == 10"));
             Assert.IsTrue(RunTest("-+-+10 == 10"));
             Assert.IsTrue(RunTest("!true == false"));
+        }
+
+        [TestMethod]
+        public void AlighmeticTest()
+        {
+            Assert.IsTrue(RunTest("1 + 1 == 2"));
+            Assert.IsTrue(RunTest("2 - 1 == 1"));
+            Assert.IsTrue(RunTest("2 * 1.5 == 3"));
+            Assert.IsTrue(RunTest("4 / 2 == 2"));
+            Assert.IsTrue(RunTest("5 % 2 == 1"));
+            Assert.IsTrue(RunTest("1 << 2 == 4"));
+            Assert.IsTrue(RunTest("16 >> 1 == 8"));
+        }
+
+        [TestMethod]
+        public void IncompleteArrayAndIndexerTest()
+        {
+            Assert.IsTrue(FilterCompiler.Parse("ints =@ {}").First().ToString()
+                == "<< Symbol: ints > Contains:  < ArrayNode: { >>");
+            Assert.IsFalse(RunTest("{}[0] == null", new TestClass
+            {
+                Ints = new string[0]
+            }));
+            Assert.IsTrue(FilterCompiler.Parse("a[0").First().ToString()
+                == "<< Symbol: a > IndexerNode: [ < Long: 0 >>");
+            Assert.IsTrue(FilterCompiler.Parse("{0, 1, ").First().ToString()
+                == "<<< Long: 0 > ArrayDelimiter: , < Long: 1 >> ArrayNode: { < Nop:  >>");
+        }
+
+        [TestMethod]
+        public void StringCompareTest()
+        {
+            var a = new TestClass { ch = 'a' };
+            Assert.IsTrue(RunTest("ch == 'a'", a));
+            Assert.IsTrue(RunTest("'a' == ch", a));
         }
 
         [TestMethod]

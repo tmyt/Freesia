@@ -189,7 +189,7 @@ namespace Freesia.Internal
             var node = values.Peek();
             var arrayNode = new ASTNode();
             var trailingDelimiters = true;
-            if (ops.Count > 0 && (node == null || node.Token.Position > ops.Peek().Position))
+            if (ops.Count > 0 && (node == null || (node.Token.Position > ops.Peek().Position && node.Token.Type != TokenType.ArrayStart)))
             {
                 values.Pop();
                 var tmp = values.Peek();
