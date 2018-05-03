@@ -564,7 +564,7 @@ namespace Freesia.Test
         [TestMethod]
         public void MethodInvokeTest()
         {
-            var a = new TestClass { Ints = new[] { "https://www.example.com/" }, TestClass2 = new TestClass2()};
+            var a = new TestClass { Ints = new[] { "https://www.example.com/" }, TestClass2 = new TestClass2() };
             Assert.IsTrue(RunTest("ints.where(x => x =@ 'www').count() > 0", a));
             Assert.IsTrue(RunTest("ints.contains(x => x =@i 'example')", a));
             Assert.IsTrue(RunTest("ints.any()", a));
@@ -623,6 +623,19 @@ namespace Freesia.Test
             var a = new TestClass { ch = 'a' };
             Assert.IsTrue(RunTest("ch == 'a'", a));
             Assert.IsTrue(RunTest("'a' == ch", a));
+        }
+
+        [TestMethod]
+        public void IncompleteLambdaTest()
+        {
+            try
+            {
+                FilterCompiler.Compile<TestClass>("text.all(x => ");
+                Assert.Fail();
+            }
+            catch (ParseException) { }
+            string str;
+            FilterCompiler.Completion<TestClass>("text.all(x => ", out str);
         }
 
         [TestMethod]

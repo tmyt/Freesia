@@ -62,7 +62,7 @@ namespace Freesia.Internal.Reflection
                     if (!@params[i].ParameterType.IsConstructedGenericType) return null;
                     // check assignable to constructed generic parameter
                     var g = t.GenericTypeArguments;
-                    var gargs = g.Select(x => generics[x.Name]).ToArray();
+                    var gargs = g.Select(x => x.IsGenericParameter ? generics[x.Name] : x).ToArray();
                     var gt = @params[i].ParameterType.GetGenericTypeDefinition().MakeGenericType(gargs);
                     if (!gt.IsAssignableFrom(argTypes[i])) return null;
                 }

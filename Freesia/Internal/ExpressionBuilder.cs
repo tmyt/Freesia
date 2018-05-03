@@ -330,10 +330,13 @@ namespace Freesia.Internal
         {
             var p = Expression.Parameter(type, arg.Value);
             _env.Add(arg.Value, p);
-            var one = MakeExpression(CompileOne(body));
+            var expr = CompileOne(body) ?? Expression.Empty();
+            var one = MakeExpression(expr);
             _env.Clear();
-            var tfn = typeof(Func<,>).MakeGenericType(type, one.Type);
-            return Expression.Lambda(tfn, one, body.Dump(), new[] { p });
+            var tfn = one.Type == typeof(void)
+                ? typeof(Action<>).MakeGenericType(type)
+                : typeof(Func<,>).MakeGenericType(type, one.Type);
+            return Expression.Lambda(tfn, one, body?.Dump(), new[] { p });
         }
 
         private Expression MakeValidation(object o)
@@ -433,10 +436,17 @@ namespace Freesia.Internal
             var info = Helper.FindPreferredMethod(methodName, argTypes);
             if (info == null)
                 throw new ParseException($"Could not found preferred method '{methodName}'.", lhs.Right.Token.Position);
-            var callExpr = Expression.Call(info, args);
-            // TODO: Null check
-            //return MayNullable(rootExpr) ? Expression.(MakeValidation(rootExpr), callExpr) : (Expression)callExpr;
-            return callExpr;
+            try
+            {
+                var callExpr = Expression.Call(info, args);
+                // TODO: Null check
+                //return MayNullable(rootExpr) ? Expression.(MakeValidation(rootExpr), callExpr) : (Expression)callExpr;
+                return callExpr;
+            }
+            catch (Exception e)
+            {
+                throw new ParseException($"Could not found preferred method '{methodName}'.", lhs.Right.Token.Position);
+            }
         }
 
         private Expression MakeNullableAccessExpression(Expression expr)

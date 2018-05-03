@@ -43,6 +43,7 @@ namespace Freesia.Internal.Extensions
 
         public static bool IsAssignableFrom(this Type from, Type to)
         {
+            if (from == null || to == null) return false;
             return from.GetTypeInfo().IsAssignableFrom(to.GetTypeInfo());
         }
     }
