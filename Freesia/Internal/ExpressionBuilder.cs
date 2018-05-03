@@ -20,6 +20,8 @@ namespace Freesia.Internal
 
         private delegate Expression UnaryExpressionBuilder(Expression expr);
 
+        private Expression Nop(Expression expr) { return expr; }
+
         private object CompileOne(ASTNode ast)
         {
             if (ast == null) return null;
@@ -59,7 +61,7 @@ namespace Freesia.Internal
                 case TokenType.Not:
                     return MakeUnaryExpression(Expression.Not, CompileOne(ast.Left));
                 case TokenType.UnaryPlus:
-                    return MakeUnaryExpression(Expression.UnaryPlus, CompileOne(ast.Left));
+                    return MakeUnaryExpression(Nop, CompileOne(ast.Left));
                 case TokenType.UnaryMinus:
                     return MakeUnaryExpression(Expression.Negate, CompileOne(ast.Left));
             }
@@ -75,6 +77,7 @@ namespace Freesia.Internal
                     rhs = MakeConvertExpression(lhs, rhs);
                 if (iscl && iscr) ; // 両方Constとか知らない
             }
+
             switch (ast.Token.Type)
             {
                 case TokenType.Plus:
@@ -261,11 +264,11 @@ namespace Freesia.Internal
             var rhsExp = MakeExpression(rhs);
             if (op == Expression.Equal)
             {
-                if (lhsExp.Type == typeof (char) && rhsExp.Type == typeof (string))
+                if (lhsExp.Type == typeof(char) && rhsExp.Type == typeof(string))
                 {
                     return op(Expression.Call(lhsExp, Cache.CharToString.Value), rhsExp);
                 }
-                if (lhsExp.Type == typeof (string) && rhsExp.Type == typeof (char))
+                if (lhsExp.Type == typeof(string) && rhsExp.Type == typeof(char))
                 {
                     return op(lhsExp, Expression.Call(rhsExp, Cache.CharToString.Value));
                 }
@@ -385,7 +388,7 @@ namespace Freesia.Internal
             var i = MakeExpression(CompileOne(indexer));
             if (i.Type == typeof(double)) throw new ParseException("Indexer should be int value.", indexer.Token.Position);
             if (property.Type.IsArray)
-                return Expression.ArrayIndex(property, Expression.Convert(i, typeof (int)));
+                return Expression.ArrayIndex(property, Expression.Convert(i, typeof(int)));
             var propInfo = property.Type.GetRuntimeProperty("Item");
             if (propInfo == null)
                 throw new ParseException($"Property '{prop.Token.Value}' is not indexed type.", -1);
@@ -529,7 +532,7 @@ namespace Freesia.Internal
         {
             var exprs = nodes.Select(MakeExpression).ToArray();
             var types = exprs.Select(x => x.Type).Distinct().ToArray();
-            var type = types.Length == 1 ? types[0] : typeof (object);
+            var type = types.Length == 1 ? types[0] : typeof(object);
             return Expression.NewArrayInit(type, exprs);
         }
 

@@ -582,6 +582,7 @@ namespace Freesia.Test
         {
             Assert.IsTrue(RunTest("+10 == 10"));
             Assert.IsTrue(RunTest("-(-10) == 10"));
+            Assert.IsTrue(RunTest("-+-+10 == 10"));
             Assert.IsTrue(RunTest("!true == false"));
         }
 
