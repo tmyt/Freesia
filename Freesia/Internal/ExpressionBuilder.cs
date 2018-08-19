@@ -143,6 +143,10 @@ namespace Freesia.Internal
 
         public Func<T, bool> CompileSyntax(ASTNode ast)
         {
+            if (ast == null)
+            {
+                throw new ParseException("Internal error.", -1);
+            }
             var root = MakeWrappedExpression(CompileOne(ast));
             if (root.Type != typeof(bool))
             {

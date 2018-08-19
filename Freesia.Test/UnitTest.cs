@@ -638,6 +638,20 @@ namespace Freesia.Test
             FilterCompiler.Completion<TestClass>("text.all(x => ", out str);
         }
 
+
+        [TestMethod]
+        public void BreakedLambdaTest()
+        {
+            try
+            {
+                FilterCompiler.Compile<TestClass>("text.all)");
+                Assert.Fail();
+            }
+            catch (ParseException) { }
+            string str;
+            FilterCompiler.Completion<TestClass>("text.all)", out str);
+        }
+
         [TestMethod]
         public void StressTest()
         {

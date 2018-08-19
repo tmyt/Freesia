@@ -17,7 +17,7 @@ namespace Freesia
         public static Func<T, bool> Compile<T>(IEnumerable<IASTNode> ast)
         {
             var c = new ExpressionBuilder<T>();
-            return c.CompileSyntax((ASTNode)ast.FirstOrDefault());
+            return c.CompileSyntax((ASTNode)ast?.FirstOrDefault());
         }
 
         public static Func<T, bool> Compile<T>(string text)
