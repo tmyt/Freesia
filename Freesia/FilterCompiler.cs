@@ -37,6 +37,11 @@ namespace Freesia
 
         public static IEnumerable<string> Completion<T>(string text, out string prefix)
         {
+            return CodeCompletion<T>.Completion(text, out prefix).Select(x => x.Name);
+        }
+
+        public static IEnumerable<CompletionResult> CompletionWithType<T>(string text, out string prefix)
+        {
             return CodeCompletion<T>.Completion(text, out prefix);
         }
     }

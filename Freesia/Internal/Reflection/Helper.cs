@@ -125,15 +125,14 @@ namespace Freesia.Internal.Reflection
 
         public static IEnumerable<string> GetEnumerableExtendedMethods()
         {
-            return EnumerableMethods.Value.Select(m => m.Name.ToLowerInvariant())
-                .Concat(EnumerableExtraMethods.Value.Select(m => m.Name.ToLowerInvariant()))
-                .Where(m => m != "firstordefault" && m != "lastordefault")
+            return GetEnumerableExtendedMethodInfos().Select(m => m.Name.ToLowerInvariant())
                 .Distinct();
         }
 
         public static IEnumerable<MethodInfo> GetEnumerableExtendedMethodInfos()
         {
-            return EnumerableMethods.Value.Concat(EnumerableExtraMethods.Value);
+            return EnumerableMethods.Value.Concat(EnumerableExtraMethods.Value)
+                .Where(x => x.Name != "FirstOrDefault" && x.Name != "LastOrDefault");
         }
     }
 }

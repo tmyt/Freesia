@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using Freesia.Internal.Extensions;
 using Freesia.Internal.Reflection;
 using Freesia.Types;
@@ -9,26 +10,25 @@ namespace Freesia.Internal
 {
     internal class CodeCompletion<T> : CompilerConfig<T>
     {
-        public static IEnumerable<string> Completion(string text, out string prefix)
+        public static IEnumerable<CompletionResult> Completion(string text, out string prefix)
         {
             var syntax = FilterCompiler.SyntaxHighlight<T>(text).ToArray();
             var last = syntax.LastOrDefault();
             prefix = "";
             // 末尾がnullならtypeof(T)のプロパティ
             if (last == null) return typeof(T).GetCachedRuntimeProperties()
-                 .Select(p => p.Name)
-                 .Concat(string.IsNullOrEmpty(UserFunctionNamespace) ? Enumerable.Empty<string>() : new[] { UserFunctionNamespace })
-                 .Select(s => s.ToLowerInvariant())
-                 .OrderBy(s => s);
+                    .Select(p => CompletionResult.Property(p.PropertyType, p.Name))
+                    .Concat(UserFunctionNamespaces())
+                    .OrderBy(s => s.Name);
             // 末尾がstring,(),indexerなら空
-            if (last.SubType == TokenType.String) return Enumerable.Empty<string>();
+            if (last.SubType == TokenType.String) return Enumerable.Empty<CompletionResult>();
             // プロパティ/メソッドを検索
             Type type = last.TypeInfo, baseType = type;
             var lookup = last.Value?.ToLowerInvariant();
             if (last.SubType == TokenType.InvokeMethod)
             {
                 // メソッド呼び出しなら空
-                return Enumerable.Empty<string>();
+                return Enumerable.Empty<CompletionResult>();
             }
             if (last.Type == SyntaxType.Operator && last.SubType != TokenType.PropertyAccess)
             {
@@ -41,7 +41,7 @@ namespace Freesia.Internal
                 // プロパティアクセスの手前がErrorの場合は空
                 var next = syntax.Reverse().Skip(1).FirstOrDefault();
                 if (next?.Type == SyntaxType.Error || (next?.Type == SyntaxType.Operator && next.SubType != TokenType.InvokeMethod && next.SubType != TokenType.ArrayNode))
-                    return Enumerable.Empty<string>();
+                    return Enumerable.Empty<CompletionResult>();
                 // prefixをクリア
                 lookup = "";
             }
@@ -55,16 +55,18 @@ namespace Freesia.Internal
                     baseType = syntax.Reverse().Skip(2).FirstOrDefault()?.TypeInfo;
                 type = baseType ?? typeof(T);
             }
-            if (type == null) return Enumerable.Empty<string>();
+            if (type == null) return Enumerable.Empty<CompletionResult>();
             prefix = lookup;
+            var methods = (type.IsEnumerable() ? Helper.GetEnumerableExtendedMethodInfos() : Enumerable.Empty<MethodInfo>())
+                .Select(x => CompletionResult.Method(x.ReturnType, x.Name))
+                .Distinct((x, y) => x.Name == y.Name);
             return type.GetCachedRuntimeProperties()
-                .Select(p => p.Name)
-                .Concat(baseType == null && !string.IsNullOrEmpty(UserFunctionNamespace) ? new[] { UserFunctionNamespace } : Enumerable.Empty<string>())
-                .Concat(type == typeof(UserFunctionTypePlaceholder) ? Functions.Keys : Enumerable.Empty<string>())
-                .Concat(type.IsEnumerable() ? Helper.GetEnumerableExtendedMethods() : Enumerable.Empty<string>())
-                .Select(s => s.ToLowerInvariant())
-                .Where(n => n.StartsWith(lookup))
-                .OrderBy(s => s);
+                .Select(x => CompletionResult.Property(x.PropertyType, x.Name))
+                .Concat(baseType == null ? UserFunctionNamespaces() : Enumerable.Empty<CompletionResult>())
+                .Concat(type == typeof(UserFunctionTypePlaceholder) ? UserFunctionKeys() : Enumerable.Empty<CompletionResult>())
+                .Concat(methods)
+                .Where(n => n.Name.StartsWith(lookup))
+                .OrderBy(s => s.Name);
         }
 
         private static bool IsSymbol(SyntaxInfo token)
